@@ -1,0 +1,13 @@
+{
+  "title": "Giovanni's blog",
+  "author": "Giovanni",
+  "description": "Notes on software, ideas, and things I am learning.",
+  "language": "en",
+  "origin": "https://giovannifilardo.com",
+  "basePath": "",
+  "navigation": [
+    {"title": "Articles", "path": "/"},
+    {"title": "About", "path": "/about/"},
+    {"title": "Tags", "path": "/tags/"}
+  ]
+}

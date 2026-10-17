@@ -1,0 +1,10 @@
+{% extends "layout.html" %}
+{% block content %}
+<article>
+  <header><p class="eyebrow">Article</p><h1>{{ page.title }}</h1>
+    <p class="meta">Published <time datetime="{{ page.date }}">{{ page.date }}</time>{% if page.updated %} · Updated <time datetime="{{ page.updated }}">{{ page.updated }}</time>{% endif %}</p>
+    {% if page.tagLinks.length %}<ul class="tags" aria-label="Tags">{% for tag in page.tagLinks %}<li><a href="{{ tag.url }}">{{ tag.name }}</a></li>{% endfor %}</ul>{% endif %}
+  </header>
+  <div class="prose">{{ page.body | safe }}</div>
+</article>
+{% endblock %}

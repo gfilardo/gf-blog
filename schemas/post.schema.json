@@ -1,0 +1,15 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["title", "slug", "date", "description"],
+  "properties": {
+    "title": {"type": "string", "pattern": "\\S"},
+    "slug": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"},
+    "description": {"type": "string", "pattern": "\\S"},
+    "date": {"type": "string", "format": "date"},
+    "updated": {"type": "string", "format": "date"},
+    "draft": {"type": "boolean"},
+    "tags": {"type": "array", "uniqueItems": true, "items": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"}}
+  }
+}

@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="{{ site.language }}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ page.title }}{% if page.route != '/' %} · {{ site.title }}{% endif %}</title>
+  <meta name="description" content="{{ page.description }}">
+  <meta name="author" content="{{ site.author }}">
+  <link rel="canonical" href="{{ page.canonical }}">
+  <link rel="stylesheet" href="{{ stylesheet }}">
+  <link rel="alternate" type="application/rss+xml" title="{{ site.title }}" href="{{ feed }}">
+  {% if page.noindex %}<meta name="robots" content="noindex">{% endif %}
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+  <header class="site-header">
+    <a class="brand" href="{{ home }}">{{ site.title }}</a>
+    <nav aria-label="Main"><ul>{% for item in navigation %}<li><a href="{{ item.url }}"{% if item.path == page.route %} aria-current="page"{% endif %}>{{ item.title }}</a></li>{% endfor %}</ul></nav>
+  </header>
+  <main id="main">
+    {% block content %}{% endblock %}
+  </main>
+  <footer><p>{{ site.description }}</p><a href="{{ feed }}">RSS feed</a></footer>
+</body>
+</html>
