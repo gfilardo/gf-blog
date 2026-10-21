@@ -18,7 +18,7 @@ test('touch pulses survive release, expire, cancel on scroll, and respect pause'
     performance: { now: () => now },
     requestAnimationFrame: fn => { callback = fn; return 1; }, cancelAnimationFrame() {},
     IntersectionObserver: class { observe() {} },
-    createFlock: () => [], WIDTH: 600, HEIGHT: 380,
+    visitorAt: () => null, createFlock: () => [], WIDTH: 600, HEIGHT: 380,
     stepFlock: (birds, dt, time, pointer) => { calls.push({ dt, pointer }); return birds; }
   });
   const touch = { pointerType: 'touch', clientX: 170, clientY: 145 };

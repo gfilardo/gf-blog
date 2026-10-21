@@ -1,4 +1,4 @@
-import { createFlock, stepFlock, WIDTH, HEIGHT } from './flock.mjs';
+import { createFlock, stepFlock, visitorAt, WIDTH, HEIGHT } from './flock.mjs';
 
 const field = document.querySelector('.system-field');
 const canvas = field?.querySelector('canvas');
@@ -9,7 +9,8 @@ if (ctx) {
   const dark = matchMedia('(prefers-color-scheme: dark)');
   let birds = createFlock(), time = 0, previous = 0, frame = 0;
   let paused = reduced.matches, visible = true, pointer = null;
-  let tap = null;
+  let tap = null, visitor = null;
+  let visitorTrail = [];
   let trails = birds.map(() => []);
   let palette;
   function colors() {
@@ -30,6 +31,19 @@ if (ctx) {
       ctx.globalAlpha = bird.color === 1 ? .9 : .55 + bird.sociability * .2;
       ctx.beginPath(); ctx.moveTo(1.2, 0); ctx.lineTo(-1.8, -1.1); ctx.lineTo(-.8, 0); ctx.lineTo(-1.8, 1.1); ctx.closePath(); ctx.fill(); ctx.restore();
     });
+    if (visitor) {
+      ctx.strokeStyle = palette[1]; ctx.lineWidth = 1;
+      for (let j = 1; j < visitorTrail.length; j++) {
+        ctx.globalAlpha = .25 * j / visitorTrail.length;
+        ctx.beginPath(); ctx.moveTo(visitorTrail[j - 1].x, visitorTrail[j - 1].y);
+        ctx.lineTo(visitorTrail[j].x, visitorTrail[j].y); ctx.stroke();
+      }
+      // The visitor is a larger open shape, distinct from the solid flock.
+      ctx.save(); ctx.translate(visitor.x, visitor.y); ctx.rotate(visitor.angle);
+      ctx.globalAlpha = .9; ctx.lineWidth = 1.3;
+      ctx.beginPath(); ctx.moveTo(9, 0); ctx.lineTo(-6, -5); ctx.lineTo(-3, 0);
+      ctx.lineTo(-6, 5); ctx.closePath(); ctx.stroke(); ctx.restore();
+    }
     ctx.globalAlpha = 1;
   }
   function resize() {
@@ -42,11 +56,16 @@ if (ctx) {
     if (paused || !visible || document.hidden) { previous = 0; return; }
     const dt = previous ? Math.min((now - previous) / (1000 / 60), 2) : 1;
     previous = now; time += dt / 60;
+    visitor = visitorAt(time);
+    if (visitor) {
+      visitorTrail.push({ x: visitor.x, y: visitor.y });
+      if (visitorTrail.length > 32) visitorTrail.shift();
+    } else visitorTrail = [];
     if (tap && now >= tap.expires) tap = null;
     // Substeps preserve steering at the faster pace, including on slower screens.
     const elapsed = dt * 1.1;
     const steps = Math.ceil(elapsed);
-    for (let i = 0; i < steps; i++) birds = stepFlock(birds, elapsed / steps, time, tap || pointer);
+    for (let i = 0; i < steps; i++) birds = stepFlock(birds, elapsed / steps, time, tap || pointer, visitor);
     birds.forEach((bird, i) => { trails[i].push({ x: bird.x, y: bird.y }); if (trails[i].length > 12) trails[i].shift(); });
     paint(); frame = requestAnimationFrame(animate);
   }

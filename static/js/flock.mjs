@@ -16,7 +16,7 @@ export function createFlock(count = 110, seed = 731) {
 }
 
 // All agents read the same previous frame; no leader or prescribed flight path.
-export function stepFlock(birds, dt = 1, time = 0, pointer = null) {
+export function stepFlock(birds, dt = 1, time = 0, pointer = null, visitor = null) {
   const next = birds.map(bird => {
     let sx = 0, sy = 0, ax = 0, ay = 0, cx = 0, cy = 0, neighbors = 0;
     for (const other of birds) {
@@ -44,6 +44,13 @@ export function stepFlock(birds, dt = 1, time = 0, pointer = null) {
       const dx = bird.x - pointer.x, dy = bird.y - pointer.y, d = Math.hypot(dx, dy);
       if (d > 0 && d < 85) { fx += dx / d * (1 - d / 85) * .12; fy += dy / d * (1 - d / 85) * .12; }
     }
+    if (visitor) {
+      const dx = bird.x - visitor.x, dy = bird.y - visitor.y, d = Math.hypot(dx, dy);
+      if (d > 0 && d < 115) {
+        const strength = (1 - d / 115) ** 2 * .3;
+        fx += dx / d * strength; fy += dy / d * strength;
+      }
+    }
     const force = Math.hypot(fx, fy), cap = Math.min(1, .065 / (force || 1));
     let vx = bird.vx + fx * cap * dt, vy = bird.vy + fy * cap * dt;
     const speed = Math.hypot(vx, vy) || 1;
@@ -53,4 +60,19 @@ export function stepFlock(birds, dt = 1, time = 0, pointer = null) {
       y: Math.max(5, Math.min(HEIGHT - 5, bird.y + vy * dt)), vx, vy };
   });
   return next;
+}
+
+// A brief encounter, then a long quiet interval for the flock to reorganize.
+// The clock is simulation time, so pausing or leaving the page freezes the visit.
+export function visitorAt(time) {
+  if (time < 5) return null;
+  const visit = Math.floor((time - 5) / 28);
+  const progress = ((time - 5) % 28) / 9;
+  if (progress >= 1) return null;
+  const direction = visit % 2 ? -1 : 1;
+  const x = direction === 1 ? -40 + progress * (WIDTH + 80) : WIDTH + 40 - progress * (WIDTH + 80);
+  const bend = visit % 3 === 0 ? 1 : -1;
+  const y = HEIGHT / 2 + Math.sin(progress * Math.PI * 2) * 65 * bend;
+  const angle = Math.atan2(Math.cos(progress * Math.PI * 2) * 65 * Math.PI * 2 * bend, direction * (WIDTH + 80));
+  return { x, y, angle, visit };
 }
