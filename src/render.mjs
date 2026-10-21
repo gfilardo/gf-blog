@@ -1,10 +1,12 @@
 import path from 'node:path';
+import { systemArt } from './system-art.mjs';
 import { urls } from './urls.mjs';
 import { templates } from './template.mjs';
 const xml = value => String(value).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&apos;' })[c]);
 export function render(root, site, documents) {
   const env = templates(path.join(root, 'templates'));
   const { local, absolute } = urls(site);
+  const artwork = systemArt();
   const files = new Map();
   const add = (file, contents) => {
     if (files.has(file)) throw new Error(`Duplicate output: ${file}`);
@@ -33,7 +35,7 @@ export function render(root, site, documents) {
     return { ...n, url: local(n.path) };
   });
   for (const page of pages) {
-    const context = { site, navigation, home: local('/'), stylesheet: local('/css/style.css'), feed: local('/feed.xml'), page: { date: null, updated: null, body: '', tags: [], noindex: false, ...page, canonical: absolute(page.route), tagLinks: (page.tags && page.kind ? page.tags : []).map(name => ({ name, url: local(`/tags/${name}/`) })) } };
+    const context = { site, artwork, navigation, home: local('/'), stylesheet: local('/css/style.css'), feed: local('/feed.xml'), page: { date: null, updated: null, body: '', tags: [], noindex: false, ...page, canonical: absolute(page.route), tagLinks: (page.tags && page.kind ? page.tags : []).map(name => ({ name, url: local(`/tags/${name}/`) })) } };
     // Standalone page tags are accepted as metadata; only articles join tag archives.
     if (page.kind === 'page') context.page.tagLinks = [];
     add(page.route.endsWith('/') ? `${page.route.slice(1)}index.html` : page.route.slice(1), env.render(page.template, context));

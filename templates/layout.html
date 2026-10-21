@@ -3,6 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f7f6f2">
   <title>{{ page.title }}{% if page.route != '/' %} · {{ site.title }}{% endif %}</title>
   <meta name="description" content="{{ page.description }}">
   <meta name="author" content="{{ site.author }}">
@@ -13,13 +14,13 @@
 </head>
 <body>
   <a class="skip" href="#main">Skip to content</a>
-  <header class="site-header">
-    <a class="brand" href="{{ home }}">{{ site.title }}</a>
-    <nav aria-label="Main"><ul>{% for item in navigation %}<li><a href="{{ item.url }}"{% if item.path == page.route %} aria-current="page"{% endif %}>{{ item.title }}</a></li>{% endfor %}</ul></nav>
-  </header>
-  <main id="main">
-    {% block content %}{% endblock %}
-  </main>
-  <footer><p>{{ site.description }}</p><a href="{{ feed }}">RSS feed</a></footer>
+  <div class="site-shell">
+    <header class="site-header">
+      <a class="brand" href="{{ home }}"><span class="brand-mark" aria-hidden="true">g<span>.</span></span>{{ site.title }}</a>
+      <nav aria-label="Main"><ul>{% for item in navigation %}<li><a href="{{ item.url }}"{% if item.path == page.route %} aria-current="page"{% endif %}>{{ item.title }}</a></li>{% endfor %}<li class="nav-feed"><a href="{{ feed }}">RSS <span aria-hidden="true">↗</span></a></li></ul></nav>
+    </header>
+    <main id="main">{% block content %}{% endblock %}</main>
+    <footer class="site-footer"><div><a class="footer-brand" href="{{ home }}">{{ site.title }}</a><p>{{ site.description }}</p></div><a class="footer-feed" href="{{ feed }}">RSS feed ↗</a></footer>
+  </div>
 </body>
 </html>

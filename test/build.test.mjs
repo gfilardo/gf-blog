@@ -111,6 +111,10 @@ test('preview serves directory URLs, correct MIME, 404 and traversal rejection',
   const css = await fetch(`${origin}/blog/css/style.css`);
   assert.match(css.headers.get('content-type'), /text\/css/);
   await css.text();
+  const module = await fetch(`${origin}/blog/js/flock.mjs`);
+  assert.equal(module.status, 200);
+  assert.match(module.headers.get('content-type'), /text\/javascript/);
+  await module.text();
 });
 
 test('invalid drafts are validated; pages can exist outside navigation', async t => {
