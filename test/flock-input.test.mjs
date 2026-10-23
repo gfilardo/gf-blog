@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import vm from 'node:vm';
+import { WIDTH, HEIGHT } from '../static/js/flock.mjs';
 
 test('touch pulses survive release, expire, cancel on scroll, and respect pause', async () => {
   const source = (await readFile(new URL('../static/js/system-field.js', import.meta.url), 'utf8')).replace(/^import .*;\n/, '');
@@ -18,7 +19,7 @@ test('touch pulses survive release, expire, cancel on scroll, and respect pause'
     performance: { now: () => now },
     requestAnimationFrame: fn => { callback = fn; return 1; }, cancelAnimationFrame() {},
     IntersectionObserver: class { observe() {} },
-    visitorAt: () => null, createFlock: () => [], WIDTH: 600, HEIGHT: 380,
+    visitorAt: () => null, createFlock: () => [], WIDTH, HEIGHT,
     stepFlock: (birds, dt, time, pointer) => { calls.push({ dt, pointer }); return birds; }
   });
   const touch = { pointerType: 'touch', clientX: 170, clientY: 145 };
@@ -26,7 +27,7 @@ test('touch pulses survive release, expire, cancel on scroll, and respect pause'
   events.pointerleave();
   now = 100; callback(now);
   assert.equal(calls.at(-1).pointer.x, 300);
-  assert.equal(calls.at(-1).pointer.y, 190);
+  assert.equal(calls.at(-1).pointer.y, HEIGHT / 2);
   assert.equal(calls.reduce((sum, call) => sum + call.dt, 0), 1.1);
   now = 1000; callback(now);
   assert.equal(calls.at(-1).pointer, null);

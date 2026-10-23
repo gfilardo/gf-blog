@@ -1,5 +1,5 @@
 export const WIDTH = 600;
-export const HEIGHT = 380;
+export const HEIGHT = 500;
 
 export function createFlock(count = 110, seed = 731) {
   const random = () => ((seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296);
@@ -8,7 +8,7 @@ export function createFlock(count = 110, seed = 731) {
     const radius = 55 + random() * 95;
     const heading = angle + Math.PI / 2;
     const speed = .65 + random() * .65;
-    return { x: 310 + Math.cos(angle) * radius * 1.5, y: 185 + Math.sin(angle) * radius,
+    return { x: WIDTH / 2 + Math.cos(angle) * radius * 1.25, y: HEIGHT / 2 + Math.sin(angle) * radius * 1.15,
       vx: Math.cos(heading) * speed, vy: Math.sin(heading) * speed,
       speed, size: 2 + random() * 1.7, phase: random() * Math.PI * 2,
       sociability: .7 + random() * .6, color: i % 11 === 0 ? 1 : i % 4 === 0 ? 2 : 0 };

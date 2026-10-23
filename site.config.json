@@ -1,10 +1,11 @@
 {
   "title": "Giovanni's blog",
-  "author": "Giovanni",
+  "author": "Giovanni Filardo",
   "description": "Notes on software architecture, engineering, and the craft of building well.",
   "language": "en",
   "origin": "https://giovannifilardo.com",
   "basePath": "",
+  "copyrightYear": "2026",
   "navigation": [
     {
       "title": "Articles",

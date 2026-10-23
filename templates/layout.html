@@ -3,7 +3,9 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#f7f6f2">
+  <meta name="theme-color" content="#f8f3ec" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0e0a0d" media="(prefers-color-scheme: dark)">
+  <meta name="theme-color" content="#0e0a0d">
   <title>{{ page.title }}{% if page.route != '/' %} · {{ site.title }}{% endif %}</title>
   <meta name="description" content="{{ page.description }}">
   <meta name="author" content="{{ site.author }}">
@@ -17,10 +19,10 @@
   <div class="site-shell">
     <header class="site-header">
       <a class="brand" href="{{ home }}"><span class="brand-mark" aria-hidden="true">g<span>.</span></span>{{ site.title }}</a>
-      <nav aria-label="Main"><ul>{% for item in navigation %}<li><a href="{{ item.url }}"{% if item.path == page.route %} aria-current="page"{% endif %}>{{ item.title }}</a></li>{% endfor %}<li class="nav-feed"><a href="{{ feed }}">RSS <span aria-hidden="true">↗</span></a></li></ul></nav>
+      <nav aria-label="Main"><ul>{% for item in navigation %}<li><a href="{{ item.url }}"{% if item.path == page.route %} aria-current="page"{% endif %}>{{ item.title }}</a></li>{% endfor %}<li class="nav-feed"><a href="{{ feed }}">RSS</a></li></ul></nav>
     </header>
     <main id="main">{% block content %}{% endblock %}</main>
-    <footer class="site-footer"><div><a class="footer-brand" href="{{ home }}">{{ site.title }}</a><p>{{ site.description }}</p></div><a class="footer-feed" href="{{ feed }}">RSS feed ↗</a></footer>
+    <footer class="site-footer"><div><a class="footer-brand" href="{{ home }}">{{ site.title }}</a><p>{{ site.description }}</p>{% if site.copyrightYear %}<p>© {{ site.copyrightYear }} {{ site.author }}</p>{% endif %}</div><a class="footer-feed" href="{{ feed }}">RSS feed</a></footer>
   </div>
 </body>
 </html>

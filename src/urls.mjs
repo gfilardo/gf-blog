@@ -1,8 +1,12 @@
 export function validateConfig(site) {
-  const fields = ['title', 'author', 'description', 'language', 'origin', 'basePath', 'navigation'];
+  const fields = ['title', 'author', 'description', 'language', 'origin', 'basePath', 'navigation', 'copyrightYear'];
   if (!site || typeof site !== 'object' || Object.keys(site).some(k => !fields.includes(k))) throw new Error('Invalid configuration fields');
-  for (const key of fields.filter(k => !['basePath', 'navigation'].includes(k))) {
+  for (const key of ['title', 'author', 'description', 'language', 'origin']) {
     if (typeof site[key] !== 'string' || !site[key].trim()) throw new Error(`Invalid configuration: ${key}`);
+  }
+  if (site.copyrightYear !== undefined) {
+    if (typeof site.copyrightYear === 'number') site.copyrightYear = String(site.copyrightYear);
+    if (typeof site.copyrightYear !== 'string' || !site.copyrightYear.trim()) throw new Error('Invalid configuration: copyrightYear');
   }
   const origin = new URL(site.origin);
   if (origin.protocol !== 'https:' || origin.origin !== site.origin) throw new Error('origin must be an HTTPS origin without a path');

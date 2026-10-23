@@ -14,7 +14,7 @@ if (ctx) {
   let trails = birds.map(() => []);
   let palette;
   function colors() {
-    palette = dark.matches ? ['#a9bdb1', '#e3ae8f', '#7e9f9c'] : ['#567267', '#a75539', '#839b93'];
+    palette = dark.matches ? ['#a8929e', '#f43f5e', '#fb7185'] : ['#4d3935', '#98122d', '#b91c32'];
   }
   function paint() {
     ctx.clearRect(0, 0, WIDTH, HEIGHT);

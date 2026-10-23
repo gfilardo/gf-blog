@@ -44,6 +44,156 @@ default-branch builds. No site has been published by this implementation.
 For a custom domain, configure that domain and its DNS in GitHub Pages settings;
 the `origin` setting controls generated URLs and does not configure hosting.
 
+## Writing articles: tags and series
+
+Both features are optional and live in each article's YAML front matter. There
+is no separate tag dictionary or series configuration file.
+
+- [Add readable tags](#add-readable-tags)
+- [Group articles into a series](#group-articles-into-a-series)
+- [Preview and release a draft part](#preview-and-release-a-draft-part)
+- [Fix validation errors](#fix-validation-errors)
+
+### Add readable tags
+
+Add a `tags` list above the closing `---` in an article:
+
+```yaml
+tags:
+  - Software_architecture
+  - Domain-driven_design
+  - API_design
+```
+
+| Value in YAML | Reader-facing label | Tag URL |
+| --- | --- | --- |
+| `Software_architecture` | Software architecture | `/tags/software-architecture/` |
+| `Domain-driven_design` | Domain-driven design | `/tags/domain-driven-design/` |
+| `API_design` | API design | `/tags/api-design/` |
+
+Underscores become spaces in labels. Case and literal hyphens are preserved.
+URLs use lowercase and convert underscores to hyphens. Labels appear consistently
+in article lists, article metadata, topic lists, topic headings, and RSS categories.
+URLs shown here are relative to the site root; configured `basePath` prefixes
+are added automatically.
+
+Use ASCII letters and digits, with single underscores or hyphens between words.
+Do not use spaces, other punctuation, leading/trailing separators, or consecutive
+separators. Existing lowercase tags keep their labels and URLs.
+
+Reuse the **exact same spelling** in every article, including drafts. Identical
+tags across articles are grouped together. Different spellings that produce the
+same URL are build errors, including case differences such as `API_design` versus
+`api_design`, and separator differences such as `API_design` versus `API-design`.
+Duplicate tags within one article are also rejected.
+
+Omit `tags` or use `tags: []` for an untagged article. Drafts do not create tag
+archives or appear in them. Standalone pages may have tag metadata, but their tags
+are not displayed and do not create article archives; conflict validation still
+includes them. Renaming a tag can change its archive URL; redirects are not
+created automatically.
+
+### Group articles into a series
+
+Create a normal Markdown article in `content/posts/`, with an additional `series`
+block. For example, this is a complete first part:
+
+```markdown
+---
+title: Start with the change, not the abstraction
+slug: designing-for-change-1
+date: "2026-10-23"
+description: A useful boundary starts with understanding what changes—and why.
+tags:
+  - Software_architecture
+series:
+  id: designing-for-change
+  title: Designing for change
+  part: 1
+draft: false
+---
+An abstraction is a prediction about what will change.
+
+## Find a reason to change
+
+Start with a concrete source of variation before introducing a new layer.
+```
+
+For the next articles, use different article titles, slugs, descriptions, and
+bodies, but keep the same `series.id` and `series.title`. Change `series.part`
+to the intended reading position:
+
+| Article | `series.id` | `series.title` | `series.part` | `draft` |
+| --- | --- | --- | --- | --- |
+| First part | `designing-for-change` | `Designing for change` | `1` | `false` |
+| Second part | `designing-for-change` | `Designing for change` | `2` | `false` |
+| Upcoming third part | `designing-for-change` | `Designing for change` | `3` | `true` |
+
+- `id` is a stable internal identifier: lowercase letters/digits separated by
+  single hyphens. It groups the articles; it does not create a series URL.
+- `title` is the reader-facing series name. It must be identical in every member
+  article. To rename a series, update this title in all its members together.
+- `part` is a unique positive integer within the series. Gaps are allowed; reading
+  order follows these numbers, not publication dates or filenames.
+
+A post can belong to one series. Omit the entire `series` block for a standalone
+article. Series metadata is not supported on standalone pages in `content/pages/`.
+
+Each published member gets a collapsible contents list, initially expanded,
+near the top. The current article is marked “You're here.” Other published parts
+are linked. Draft parts show their titles and part numbers as “Coming soon,”
+without links. Previous/next links at the bottom skip drafts. There is no separate
+series section or archive page, and articles still appear normally in the home
+page, tag archives, and feed.
+
+The repository includes a three-part example:
+
+1. [Start with the change, not the abstraction](content/posts/designing-for-change-1.md)
+2. [Make the contract explicit](content/posts/designing-for-change-2.md)
+3. [Separate deployment when the boundary earns it](content/posts/designing-for-change-3.md) — draft
+
+### Preview and release a draft part
+
+Set `draft: true` on an upcoming article and assign its series and part number.
+**This announces its title and position on published sibling articles.** Its body
+and URL remain unpublished, and it is excluded from article indexes, tag archives,
+RSS, and the sitemap. Keep a draft out of the series until its title is ready to
+announce. An entirely draft series creates no public pages.
+
+To check your changes locally:
+
+```sh
+npm run build
+npm run preview
+```
+
+Open a published member, such as
+<http://localhost:8000/posts/designing-for-change-1/>, to inspect the series list.
+Use your configured port and base path if different. If the preview server is
+already running, only rebuild and refresh; it does not rebuild automatically.
+
+To release a part, change `draft: true` to `draft: false`, set `date` to the intended
+publication date, and rebuild. The contents lists and previous/next links update
+automatically. A future date alone does **not** keep an article unpublished; use
+`draft: true` until it is ready. Building updates local output; publication follows
+the repository's deployment workflow.
+
+### Fix validation errors
+
+| Error | How to fix it |
+| --- | --- |
+| Tags differ only by case or map to the same URL | Pick one exact spelling and use it in all affected files. The error names both spellings and source files. |
+| A tag contains spaces or invalid separators | Use underscores for spaces; keep single hyphens only where the displayed label needs them. |
+| Duplicate part number within a series | Give each member a unique positive integer, including draft members. |
+| Series titles disagree | Use the identical display title in every article with that series ID. |
+| Missing series field | Supply all three fields: `id`, `title`, and `part`, or remove the whole block. |
+
+Errors stop the build and preserve the last successful `build/`. Validation
+includes drafts, so publishing them later cannot introduce an unnoticed conflict.
+
+Series grouping happens once after all articles are loaded. Articles share a
+lightweight series list; their bodies are not copied or parsed again.
+
 ## Scope
 
 The project uses Markdown posts and standalone pages, shared templates, copied
@@ -66,7 +216,7 @@ are outside the initial scope. Readers need no JavaScript to read or navigate it
 | --- | --- | --- |
 | FR-01 | Author articles and standalone pages in Markdown with YAML front matter. | A valid source file produces an HTML page with its title and rendered body; headings, links, lists, images, fenced code, and tables work. |
 | FR-02 | Validate content before publication. | Missing required fields, invalid calendar dates, unknown metadata keys, invalid slugs, and duplicate routes stop the build with source-specific diagnostics. |
-| FR-03 | Exclude drafts from publication. | Content marked `draft: true` appears in no generated page, index, feed, or sitemap. Future dates alone do not hide content. |
+| FR-03 | Exclude drafts from publication. | Draft bodies and URLs are never published. Draft titles explicitly assigned to a series appear only in that series’ contents list as “Coming soon”; drafts stay out of indexes, feeds, and sitemaps. Future dates alone do not hide content. |
 | FR-04 | Render shared layouts using an existing Node.js template engine. | Templates can interpolate escaped values, insert explicitly trusted HTML, branch on values, and iterate over collections; invalid syntax and missing required output values fail the build. |
 | FR-05 | Generate a home page listing published articles newest first. | Each entry links to its article and shows title, publication date, and description. Equal dates sort by slug; zero articles produces a useful empty state. |
 | FR-06 | Publish predictable URLs and navigation. | Articles use `/posts/<slug>/`, standalone pages use `/<slug>/`, and shared navigation links to the index and configured pages. |
@@ -116,6 +266,8 @@ src/
   template.mjs
   urls.mjs
   render.mjs
+  series.mjs
+  tags.mjs
   output.mjs
   preview.mjs
 test/
@@ -169,8 +321,10 @@ are rejected to catch spelling errors. The template supplies the title as the
 single `<h1>`; authored headings start at `##`. Raw HTML in Markdown is disabled.
 
 Metadata is validated using the JSON schemas in `schemas/` with Ajv and
-`ajv-formats`. Optional `tags` is a list of unique lowercase hyphenated names,
-defaulting to an empty list. Published articles create `/tags/<tag>/` archives
+`ajv-formats`. Optional `tags` is a list of unique names using ASCII letters, digits, and single
+hyphen or underscore separators, defaulting to an empty list. Case is preserved
+for display, underscores become spaces, and literal hyphens stay hyphens. URLs
+use lowercase names with underscores converted to hyphens. Published articles create `/tags/<tag>/` archives
 and a `/tags/` index. Tags on standalone pages are accepted but do not create
 article archives. Drafts contribute no pages or tag entries. Runtime defaults
 are applied explicitly after schema validation.
@@ -186,13 +340,13 @@ no framework, application server, database, or browser runtime dependency.
 ### Build pipeline
 
 1. **Read configuration.** Validate `site.config.json`: site title, author,
-   description, language, production `origin`, `basePath`, and navigation.
+   description, language, production `origin`, `basePath`, navigation, and optional `copyrightYear`.
    `origin` is an HTTPS origin without a path; `basePath` is empty or a leading
    slash path without a trailing slash, such as `/my-blog`.
 2. **Load content once (FR-01–03).** Parse metadata and Markdown into document
    objects containing source path, kind, slug, title, description, dates, draft
    status, logical URL, and rendered body. Validate all sources, including drafts,
-   then filter drafts out of the publication collection.
+   group series metadata (including draft titles), then filter drafts out of the publication collection.
 3. **Plan outputs (FR-05–08).** Sort articles and construct a route manifest for
    the home page, documents, 404 page, assets, feed, sitemap, and `.nojekyll`.
    Reject collisions, including reserved page slugs such as `posts` and `assets`.

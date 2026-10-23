@@ -16,6 +16,10 @@ async function fixture(t) {
   const dir = await mkdtemp(path.join(os.tmpdir(), 'blog-test-'));
   t.after(() => rm(dir, { recursive: true, force: true }));
   for (const name of ['content', 'static', 'templates', 'site.config.json']) await cp(path.join(root, name), path.join(dir, name), { recursive: true });
+  // Keep fixtures independent of additional articles in the actual blog.
+  await rm(path.join(dir, 'content/posts'), { recursive: true });
+  await mkdir(path.join(dir, 'content/posts'));
+  await cp(path.join(root, 'content/posts/hello-world.md'), path.join(dir, 'content/posts/hello-world.md'));
   await writeFile(path.join(dir, 'site.config.json'), JSON.stringify({ ...config, origin: 'https://example.com' }));
   return dir;
 }
@@ -134,4 +138,108 @@ test('invalid drafts are validated; pages can exist outside navigation', async t
   const previous = await readFile(path.join(dir, 'build/index.html'), 'utf8');
   await assert.rejects(build(dir));
   assert.equal(await readFile(path.join(dir, 'build/index.html'), 'utf8'), previous);
+});
+
+test('series metadata requires a stable id, title and positive integer part', () => {
+  for (const series of [
+    '{id: architecture, title: Architecture}',
+    '{id: Invalid, title: Architecture, part: 1}',
+    '{id: architecture, title: "", part: 1}',
+    '{id: architecture, title: Architecture, part: 0}',
+    '{id: architecture, title: Architecture, part: 1.5}',
+    '{id: architecture, title: Architecture, part: 1, typo: true}'
+  ]) assert.throws(() => parseContent('series.md', article(`series: ${series}`), 'post', config), /series.md/);
+});
+
+const seriesArticle = (slug, part, draft = false, title = 'Architecture & trade-offs') => article(
+  `draft: ${draft}\nseries:\n  id: architecture\n  title: ${JSON.stringify(title)}\n  part: ${part}`,
+  draft ? 'UNPUBLISHED BODY' : 'Published body'
+).replace('slug: example', `slug: ${slug}`).replace('title: Example', `title: ${slug}`);
+
+test('series lists ordered parts, exposes only draft titles and links published neighbors', async t => {
+  const dir = await fixture(t);
+  for (const [slug, part, draft] of [['last', 4, false], ['upcoming', 2, true], ['first', 1, false], ['middle', 3, false]]) {
+    await writeFile(path.join(dir, `content/posts/${slug}.md`), seriesArticle(slug, part, draft));
+  }
+  const files = await build(dir, { basePath: '/blog' });
+  const html = files.get('posts/middle/index.html');
+  assert.match(html, /Part 3 of the series/);
+  assert.match(html, /Architecture &amp; trade-offs/);
+  assert.ok(html.indexOf('value="1"') < html.indexOf('value="2"'));
+  assert.ok(html.indexOf('value="2"') < html.indexOf('value="3"'));
+  assert.match(html, /value="3" aria-current="page"/);
+  assert.match(html, /Coming soon/);
+  assert.match(html, /rel="prev" href="\/blog\/posts\/first\/"/);
+  assert.match(html, /rel="next" href="\/blog\/posts\/last\/"/);
+  assert.ok(!files.has('posts/upcoming/index.html'));
+  for (const contents of files.values()) {
+    assert.ok(!String(contents).includes('UNPUBLISHED BODY'));
+    assert.ok(!String(contents).includes('/posts/upcoming/'));
+  }
+  for (const name of ['index.html', 'feed.xml', 'sitemap.xml']) assert.ok(!String(files.get(name)).includes('upcoming'));
+  assert.ok(!files.get('posts/hello-world/index.html').includes('class="series-nav"'));
+  assert.ok(!files.get('posts/first/index.html').includes('rel="prev"'));
+  assert.ok(!files.get('posts/last/index.html').includes('rel="next"'));
+  await writeFile(path.join(dir, 'content/posts/upcoming.md'), seriesArticle('upcoming', 2));
+  const promoted = await build(dir, { basePath: '/blog' });
+  assert.match(promoted.get('posts/middle/index.html'), /rel="prev" href="\/blog\/posts\/upcoming\/"/);
+  assert.ok(!promoted.get('posts/middle/index.html').includes('Coming soon'));
+});
+
+test('series conflicts fail safely, including draft conflicts; gaps and single parts work', async t => {
+  const dir = await fixture(t);
+  await writeFile(path.join(dir, 'content/posts/one.md'), seriesArticle('one', 3));
+  const first = await build(dir);
+  assert.match(first.get('posts/one/index.html'), /Part 3 of the series/);
+  assert.ok(!first.get('posts/one/index.html').includes('class="series-pagination"'));
+  await writeFile(path.join(dir, 'content/posts/two.md'), seriesArticle('two', 3, true));
+  await assert.rejects(build(dir), /two.md: duplicate part 3/);
+  assert.equal(await readFile(path.join(dir, 'build/posts/one/index.html'), 'utf8'), first.get('posts/one/index.html'));
+  await writeFile(path.join(dir, 'content/posts/two.md'), seriesArticle('two', 4, true, 'Different title'));
+  await assert.rejects(build(dir), /two.md: series architecture title differs/);
+});
+
+test('tags preserve display spelling and derive stable lowercase URLs everywhere', async t => {
+  const dir = await fixture(t);
+  await writeFile(path.join(dir, 'content/posts/tagged.md'), article('tags: [API_design, Domain-driven_design]'));
+  const files = await build(dir, { basePath: '/blog' });
+  for (const name of ['index.html', 'tags/index.html', 'posts/example/index.html', 'tags/api-design/index.html']) {
+    assert.match(files.get(name), /API design/);
+    assert.ok(!files.get(name).includes('API_design'));
+  }
+  assert.match(files.get('posts/example/index.html'), /href="\/blog\/tags\/api-design\/"/);
+  assert.match(files.get('tags/domain-driven-design/index.html'), /<h1>Domain-driven design<\/h1>/);
+  assert.match(files.get('feed.xml'), /<category>API design<\/category>/);
+  assert.match(files.get('sitemap.xml'), /\/blog\/tags\/api-design\//);
+  assert.ok(files.has('tags/software/index.html'));
+  assert.deepEqual(await build(dir, { basePath: '/blog' }), files);
+});
+
+test('tag collisions fail with both sources, including drafts, and preserve previous output', async t => {
+  const dir = await fixture(t);
+  await writeFile(path.join(dir, 'content/posts/a.md'), article('tags: [API_design]'));
+  const original = await build(dir);
+  for (const tag of ['api_design', 'API-design']) {
+    await writeFile(path.join(dir, 'content/posts/b.md'), article(`tags: [${tag}]\ndraft: true`).replace('slug: example', 'slug: other'));
+    await assert.rejects(build(dir), error => {
+      assert.match(error.message, /b.md/);
+      assert.match(error.message, /a.md/);
+      assert.match(error.message, /both use \/tags\/api-design\//);
+      return true;
+    });
+    assert.equal(await readFile(path.join(dir, 'build/index.html'), 'utf8'), original.get('index.html'));
+  }
+  await writeFile(path.join(dir, 'content/posts/b.md'), article('tags: [API_design]').replace('slug: example', 'slug: other'));
+  const files = await build(dir);
+  assert.match(files.get('tags/api-design/index.html'), /href="\/posts\/other\/"/);
+  assert.match(files.get('tags/api-design/index.html'), /href="\/posts\/example\/"/);
+  await unlink(path.join(dir, 'content/posts/b.md'));
+  await writeFile(path.join(dir, 'content/posts/a.md'), article('tags: [API_design, api_design]'));
+  await assert.rejects(build(dir), /tag "api_design" conflicts/);
+});
+
+test('tag metadata rejects whitespace, punctuation and repeated separators', () => {
+  for (const tag of ['API design', '_API', 'API_', 'API__design', 'API--design', 'API_-design', 'C++', '../api']) {
+    assert.throws(() => parseContent('tags.md', article(`tags: [${JSON.stringify(tag)}]`), 'post', config), /tags.md/);
+  }
 });
