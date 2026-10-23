@@ -449,3 +449,9 @@ If a process is forcibly terminated, remove `.build.lock` only after confirming 
 build is running. Abandoned `.build-stage-*` directories can then be removed; if
 a crash occurred during replacement, recover the previous output from a
 `.build-backup-*` directory or rebuild.
+
+## Planned improvements
+
+- **Recursive content traversal for post partitioning**: Update `loadContent` in `src/content.mjs` to support recursive directory walking under `content/posts/`. This will allow organizing articles into ergonomic folders (e.g., `content/posts/2026/`, `content/posts/2025/`) as the archive grows, while keeping YAML front matter as the sole authoritative source of truth for publication dates, slugs, and permalinks.
+- **Image layout hints via URL fragments**: Support expressive image placement in Markdown without breaking CommonMark portability or adding third-party plugins. By inspecting image AST tokens in `src/content.mjs`, URL fragments such as `![alt](/assets/diagram.png#float-right)` or `#float-left` can be converted into responsive CSS layout classes (`float-right`, `float-left`) with mobile resets.
+- **Generalized interactive sketch and tool embeds**: Implement a generic embedding primitive using HTML `<object>` or sandboxed `<iframe>` elements to support both internal project sketches (e.g., HTML/Canvas/WebGL experiments authored inside the repository) and external embeds (e.g., CodePen, ShaderToy). Links with an `#embed` fragment or specialized directive can transform into responsive, styled enclosures with native fallback links.
