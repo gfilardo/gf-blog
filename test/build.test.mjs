@@ -19,7 +19,7 @@ async function fixture(t) {
   // Keep fixtures independent of additional articles in the actual blog.
   await rm(path.join(dir, 'content/posts'), { recursive: true });
   await mkdir(path.join(dir, 'content/posts'));
-  await cp(path.join(root, 'content/posts/hello-world.md'), path.join(dir, 'content/posts/hello-world.md'));
+  await writeFile(path.join(dir, 'content/posts/hello-world.md'), `---\ntitle: Hello world\nslug: hello-world\ndate: "2026-10-17"\ndescription: A small place for notes, ideas, and things I am learning.\ntags:\n  - blogging\n  - software\ndraft: false\n---\nWelcome to my blog.\n`);
   await writeFile(path.join(dir, 'site.config.json'), JSON.stringify({ ...config, origin: 'https://example.com' }));
   return dir;
 }
@@ -243,3 +243,30 @@ test('tag metadata rejects whitespace, punctuation and repeated separators', () 
     assert.throws(() => parseContent('tags.md', article(`tags: [${JSON.stringify(tag)}]`), 'post', config), /tags.md/);
   }
 });
+
+test('image layout hints via URL fragments, captions, and diagnostics', () => {
+  const defaultParsed = parseContent('fig.md', article('', '![Alt text](/assets/diagram.png "Figure 1: Diagram caption")'), 'post', config);
+  assert.match(defaultParsed.body, /<figure class="image-figure image-default"><img src="\/assets\/diagram\.png" alt="Alt text" loading="lazy"><figcaption>Figure 1: Diagram caption<\/figcaption><\/figure>/);
+
+  const floatRight = parseContent('fig.md', article('', '![Alt](/assets/cluster.png#float-right)'), 'post', config);
+  assert.match(floatRight.body, /<figure class="image-figure image-float-right"><img src="\/assets\/cluster\.png" alt="Alt" loading="lazy"><\/figure>/);
+
+  const wideFramed = parseContent('fig.md', article('', '![Wide](/assets/wide.png#wide+frame "Wide *caption* with [link](/about/)")'), 'post', config);
+  assert.match(wideFramed.body, /<figure class="image-figure image-wide image-frame"><img src="\/assets\/wide\.png" alt="Wide" loading="lazy"><figcaption>Wide <em>caption<\/em> with <a href="\/about\/">link<\/a><\/figcaption><\/figure>/);
+
+  const bleed = parseContent('fig.md', article('', '![Bleed](/assets/hero.jpg#bleed)'), 'post', config);
+  assert.match(bleed.body, /<figure class="image-figure image-bleed"><img src="\/assets\/hero\.jpg" alt="Bleed" loading="lazy"><\/figure>/);
+
+  const linked = parseContent('fig.md', article('', '[![Alt](/assets/linked.png#narrow)](/assets/linked.png)'), 'post', config);
+  assert.match(linked.body, /<figure class="image-figure image-narrow"><a href="\/assets\/linked\.png"><img src="\/assets\/linked\.png" alt="Alt" loading="lazy"><\/a><\/figure>/);
+
+  const inline = parseContent('fig.md', article('', 'Check this ![badge](/assets/badge.png#frame) icon inline.'), 'post', config);
+  assert.match(inline.body, /<p>Check this <img src="\/assets\/badge\.png" alt="badge" loading="lazy" class="image-frame"> icon inline\.<\/p>/);
+
+  assert.throws(() => parseContent('fig.md', article('', '![Alt](/assets/photo.png#flaot-right)'), 'post', config), /Unknown image layout hint: "flaot-right"/);
+
+  assert.throws(() => parseContent('fig.md', article('', '![Alt](/assets/photo.png#float-left+float-right)'), 'post', config), /Conflicting image layout hints/);
+
+  assert.throws(() => parseContent('fig.md', article('', 'Text before ![Alt](/assets/photo.png#float-right) text after.'), 'post', config), /cannot be inline with text/);
+});
+

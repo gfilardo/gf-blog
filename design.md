@@ -148,3 +148,19 @@ Every 28 simulation seconds, an external visitor agent enters the airspace along
 ### Focus States & Keyboard Navigation
 - All interactive controls (`<a>`, `<button>`, `<summary>`, `<input>`) provide a visible `2px solid var(--accent)` outline with `5px–6px` offset when focused via keyboard (`:focus-visible`).
 - A skip-to-content link is the first tab stop on every page.
+
+### Editorial Figures & Responsive Image Layouts (`.image-figure`)
+- **Semantic Structure**: Block images are rendered as HTML5 `<figure class="image-figure ...">` containing `<img loading="lazy">` and optional `<figcaption>`.
+- **Typographic Legends**: Legends originate from the CommonMark title string (`"..."`) and render in `13px var(--sans)` in `--muted`, ensuring they provide quiet editorial context without competing with body prose.
+- **URL Fragment Mapping**:
+  - `image-default`: Contained within the 730px prose column.
+  - `image-float-left` (`#float-left`): Floats left at 44% width with 2rem right margin for wrapped prose; resets to stacked 100% on mobile (`<= 760px`).
+  - `image-float-right` (`#float-right`): Floats right at 44% width with 2rem left margin for wrapped prose; resets to stacked 100% on mobile.
+  - `image-wide` (`#wide`): Breaks out symmetrically to align with the 1184px site shell.
+  - `image-bleed` (`#bleed` or `#full`): Spans `100vw` edge-to-edge across the viewport; its `<figcaption>` aligns with the 730px prose column.
+  - `image-narrow` (`#narrow` or `#center`): Centers and caps width at 380px for UI dialogs and mobile mockups.
+- **Modifiers**:
+  - `image-frame` (`#frame` or `#border`): Adds `1px solid var(--line)` and `border-radius: 4px` for light/dark background contrast.
+  - `image-invert-dark` (`#invert-dark`): Inverts line art in dark mode (`filter: invert(0.9) hue-rotate(180deg)`).
+  - `image-pixelated` (`#pixelated`): Disables smoothing (`image-rendering: pixelated`) for crisp retro/pixel art.
+

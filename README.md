@@ -404,8 +404,29 @@ In Markdown and configuration, site-local links start with `/` and use logical
 routes: `/about/`, `/posts/hello-world/`, and `/assets/posts/hello-world/photo.jpg`.
 The Markdown renderer rewrites local link and image URLs through the same URL
 helper. Relative file links such as `../about.md` are rejected initially to avoid
-source/output ambiguity. External URLs and fragments retain their meaning.
+source/output ambiguity. External URLs retain their meaning.
 Templates consume prepared URLs from their contexts.
+
+#### Images, layout hints, and legends
+
+Images written as standalone Markdown blocks are transformed into semantic HTML5 `<figure class="image-figure ...">` enclosures with lazy loading (`loading="lazy"`):
+
+```markdown
+![Alt text](/assets/posts/diagram.png "Figure legend text")
+```
+
+- **Legends / Captions**: The standard Markdown title attribute (`"Figure legend text"`) renders as `<figcaption>`, with support for inline Markdown (italics, bold, code, links). The redundant browser tooltip attribute on `<img>` is stripped.
+- **Layout hints via URL fragments**: Append `#fragment` to the image URL to map onto responsive CSS layout classes:
+  - `#float-left` (`image-float-left`): Floats left (44% width); prose wraps right; resets to 100% full width on mobile (`<= 760px`).
+  - `#float-right` (`image-float-right`): Floats right (44% width); prose wraps left; resets to 100% full width on mobile.
+  - `#wide` (`image-wide`): Breaks out of the 730px prose column to align with the 1184px site shell.
+  - `#bleed` or `#full` (`image-bleed`): Spans 100vw edge-to-edge across the screen while keeping the caption aligned with the prose column.
+  - `#narrow` or `#center` (`image-narrow`): Capped at 380px centered for small UI dialogs and mobile screenshots.
+- **Modifiers**: Combine with `+` (e.g. `![Alt](/assets/dialog.png#narrow+frame "Caption")`):
+  - `#frame` or `#border`: Hairline `1px solid var(--line)` border and rounded corners for screenshots on light or dark paper.
+  - `#invert-dark`: Inverts tones in dark mode (`filter: invert(0.9) hue-rotate(180deg)`) for transparent line art and SVGs.
+  - `#pixelated`: Applies `image-rendering: pixelated` for retro graphics and pixel art.
+- **Diagnostics**: Typos (e.g. `#flaot-right`), conflicting primary layouts (`#float-left+float-right`), or block layouts placed inline with text fail the build with helpful error messages. URL fragments are automatically stripped from the final `src` attribute.
 
 Only article tags generate archives; each archive uses the same ordering as the home page.
 
@@ -453,5 +474,5 @@ a crash occurred during replacement, recover the previous output from a
 ## Planned improvements
 
 - **Recursive content traversal for post partitioning**: Update `loadContent` in `src/content.mjs` to support recursive directory walking under `content/posts/`. This will allow organizing articles into ergonomic folders (e.g., `content/posts/2026/`, `content/posts/2025/`) as the archive grows, while keeping YAML front matter as the sole authoritative source of truth for publication dates, slugs, and permalinks.
-- **Image layout hints via URL fragments**: Support expressive image placement in Markdown without breaking CommonMark portability or adding third-party plugins. By inspecting image AST tokens in `src/content.mjs`, URL fragments such as `![alt](/assets/diagram.png#float-right)` or `#float-left` can be converted into responsive CSS layout classes (`float-right`, `float-left`) with mobile resets.
 - **Generalized interactive sketch and tool embeds**: Implement a generic embedding primitive using HTML `<object>` or sandboxed `<iframe>` elements to support both internal project sketches (e.g., HTML/Canvas/WebGL experiments authored inside the repository) and external embeds (e.g., CodePen, ShaderToy). Links with an `#embed` fragment or specialized directive can transform into responsive, styled enclosures with native fallback links.
+- **Client-side static search (e.g., FlexSearch)**: Once the publication accumulates enough articles to warrant indexing, generate a lightweight search index manifest at build time and integrate a zero-dependency, client-side search solution like FlexSearch. This keeps full-text search instant, private, and deterministic without adding runtime server dependencies or third-party tracking services.

@@ -3,6 +3,8 @@ title: About
 slug: about
 description: Domain architect, software craftsman, and builder of prototypes, systems, and ideas.
 ---
+![Giovanni Filardo](/assets/pages/about/giovanni.jpg#float-right "Giovanni Filardo · Domain Architect")
+
 I am **Giovanni Filardo**. I am a technologist. I love exploring software in all its facets, from embedded systems to the cloud, and bringing that breadth to architecture.
 
 Currently, I work as a domain architect within the banking sector, based in Bussum, near Amsterdam. My role is fundamentally conceptual: establishing system responsibilities, defining business capabilities, clarifying boundaries, and advising engineering teams on how distributed systems integrate across the wider infrastructure.
@@ -21,6 +23,8 @@ For years, the mainstream argument against this approach was developer velocity:
 
 I carry this same conviction into computing topologies: **software should be decentralized and peer-to-peer by default**. The client-server paradigm centralizes control and lacks censorship resistance. While distributed peer-to-peer architectures are often labelled "too complex," that complexity is largely an illusion of tooling. We spent thirty years refining client-server infrastructure; once we invest equivalent care into peer-to-peer primitives, building decentralized systems will feel entirely natural.
 
+![Decentralized network topology](/assets/pages/about/p2p-topology.jpg#wide "Figure 1: Peer-to-peer topology: sovereign interconnected nodes without central broker mediation.")
+
 ---
 
 ## The Laboratory: Prototypes & Business Opportunities
@@ -29,6 +33,8 @@ Logging off from work does not mean leaving the keyboard behind. In fact, many o
 
 My private repositories are a dense proving ground filled with experiments and proofs of concept. I love the visceral feedback loop of building prototypes from scratch—whether probing a decentralized protocol, stress-testing an AI interaction model, or developing bespoke web utilities. Documenting the architectural mechanics and lessons from these prototypes is one of the core reasons this blog exists.
 
+![Personal laboratory proving ground](/assets/pages/about/prototype-bench.jpg#narrow+frame "Figure 2: The workshop proving ground: prototyping consensus and low-level protocols.")
+
 Crucially, I do not look at code in a vacuum. I am constantly observing technology through an entrepreneurial lens, evaluating whether a proof of concept holds the kernel of a viable product or a new business opportunity. The ultimate satisfaction lies in bridging rigorous technical craftsmanship with authentic market value.
 
 ---
@@ -36,6 +42,8 @@ Crucially, I do not look at code in a vacuum. I am constantly observing technolo
 ## Antifragile Thinking and the Language of Art
 
 Before committing to computer science, I stood at a crossroads: I contemplated studying art and cinematography. I chose technology, but I never left art behind.
+
+![Monumental architectural light study](/assets/pages/about/art-study.jpg#wide)
 
 Human-made artifacts carry an irreplaceable resonance. Art is fundamentally an ambiguous language—and that ambiguity is its greatest virtue. Consuming art demands introspection: you do not merely receive a message; you complete the act of creation by generating the interpretation yourself.
 
@@ -54,6 +62,8 @@ Colleagues often asked why I took what looked like a "step back." But to me, it 
 ## When the Screen Closes
 
 For all the pull of systems, protocols, and code, my center of gravity is at home. I share life with my wonderful and deeply supportive wife, and together we are raising two bright, lively children.
+
+![Italian summer light](/assets/pages/about/stillness.jpg#float-left "Embracing stillness and family away from the screen.")
 
 My life away from the screen revolves around:
 - **Movement & discipline**: Regular strength training and physical fitness.
