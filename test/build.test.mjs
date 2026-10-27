@@ -270,3 +270,18 @@ test('image layout hints via URL fragments, captions, and diagnostics', () => {
   assert.throws(() => parseContent('fig.md', article('', 'Text before ![Alt](/assets/photo.png#float-right) text after.'), 'post', config), /cannot be inline with text/);
 });
 
+
+test('inline Mermaid renders accessible, deterministic diagrams with distinct IDs', () => {
+  const diagram = '```mermaid Request <path>\nflowchart TD\n A[Browser] --> B[Application]\n```';
+  const raw = article('', `${diagram}\n\n${diagram}\n\n\`\`\`js\nconst x = 1;\n\`\`\``);
+  const first = parseContent('diagram.md', raw, 'post', config).body;
+  assert.equal(first, parseContent('diagram.md', raw, 'post', config).body);
+  assert.equal((first.match(/class="mermaid-diagram"/g) || []).length, 2);
+  assert.match(first, /role="img" aria-label="Request &lt;path&gt;"/);
+  assert.match(first, /<code class="language-js">/);
+  assert.doesNotMatch(first, /<script|@import/);
+  const ids = [...first.matchAll(/ id="([^"]+)"/g)].map(m => m[1]);
+  assert.equal(new Set(ids).size, ids.length);
+  for (const [, ref] of first.matchAll(/url\(#([^)]+)\)/g)) assert.ok(ids.includes(ref));
+  assert.throws(() => parseContent('broken.md', article('', '```mermaid\nnot-a-diagram\n```'), 'post', config), /broken.md:/);
+});

@@ -5,6 +5,7 @@ import YAML from 'yaml';
 import Ajv from 'ajv';
 import addFormats from 'ajv-formats';
 import MarkdownIt from 'markdown-it';
+import { renderMermaidSVG } from 'beautiful-mermaid';
 import { contentUrl, urls } from './urls.mjs';
 const ajv = new Ajv({ allErrors: true });
 addFormats(ajv);
@@ -57,6 +58,32 @@ export function parseContent(source, raw, kind, site) {
     if (!validators[kind](data)) throw new Error(ajv.errorsText(validators[kind].errors, { separator: '; ' }));
     if (data.updated && (!data.date || data.updated < data.date)) throw new Error('updated requires date and must not precede it');
     const md = new MarkdownIt({ html: false });
+    const defaultFence = md.renderer.rules.fence;
+    md.renderer.rules.fence = (tokens, index, options, env, self) => {
+      const token = tokens[index];
+      if (token.info.trim().split(/\s+/)[0] !== 'mermaid') {
+        return defaultFence(tokens, index, options, env, self);
+      }
+      const caption = token.info.trim().slice('mermaid'.length).trim();
+      let svg = renderMermaidSVG(token.content, {
+        bg: 'var(--paper)', fg: 'var(--ink)', font: 'Arial', transparent: true, layerSpacing: 24,
+        line: 'color-mix(in srgb, var(--ink) 65%, var(--paper))',
+        border: 'color-mix(in srgb, var(--ink) 65%, var(--paper))',
+        muted: 'var(--ink)', accent: 'var(--accent)',
+      });
+      // Multiple diagrams on one page must not share marker or participant IDs.
+      const prefix = `diagram-${data.slug}-${index}-`;
+      svg = svg.replace(/^.*@import.*\n/gm, '')
+        .replace(/ id="([^"]+)"/g, (_, id) => ` id="${prefix}${id}"`)
+        .replace(/url\(#([^)]+)\)/g, (_, id) => `url(#${prefix}${id})`)
+        .replace(/text \{/g, '.mermaid-diagram text {')
+        .replace(/svg \{/g, '.mermaid-diagram svg {');
+      // Enlarge the natural size; CSS still caps it at the available article width.
+      svg = svg.replace(/<svg\b[^>]*>/, tag => tag.replace(/(width|height)="([\d.]+)"/g, (_, dimension, value) => `${dimension}="${Number(value) * 1.35}"`));
+      const label = md.utils.escapeHtml(caption || 'Diagram');
+      svg = svg.replace('<svg ', `<svg role="img" aria-label="${label}" `);
+      return `<figure class="mermaid-diagram">${svg}${caption ? `<figcaption>${label}</figcaption>` : ''}</figure>\n`;
+    };
     const tokens = md.parse(match[2], {});
 
     for (let i = 0; i < tokens.length - 2; i++) {

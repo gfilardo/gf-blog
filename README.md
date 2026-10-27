@@ -407,6 +407,21 @@ helper. Relative file links such as `../about.md` are rejected initially to avoi
 source/output ambiguity. External URLs retain their meaning.
 Templates consume prepared URLs from their contexts.
 
+#### Inline Mermaid diagrams
+
+A fenced `mermaid` block is rendered to inline SVG at build time using
+`beautiful-mermaid`. Optional text after `mermaid` becomes its accessible label
+and caption. Flowcharts and sequence diagrams use the renderer's supported
+Mermaid syntax; Mermaid plugins and browser integrations are not loaded.
+No separate image files, browser JavaScript, or rendering service is needed.
+
+````markdown
+```mermaid A request reaches the application.
+flowchart TD
+    Browser --> Application
+```
+````
+
 #### Images, layout hints, and legends
 
 Images written as standalone Markdown blocks are transformed into semantic HTML5 `<figure class="image-figure ...">` enclosures with lazy loading (`loading="lazy"`):

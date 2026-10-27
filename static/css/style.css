@@ -169,3 +169,8 @@ main > .eyebrow:first-child { margin-top: 70px; }
 .series-pagination [rel="next"] { text-align: right; margin-left: auto; }
 .series-nav summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 5px; }
 @media (max-width: 540px) { .series-nav { padding: 16px; } .series-pagination { flex-direction: column; } }
+
+/* Mermaid is rendered to inline SVG during the build. */
+.mermaid-diagram { margin: 2rem 0; overflow-x: auto; }
+.mermaid-diagram svg { display: block; max-width: 100%; height: auto; margin: 0 auto; }
+.mermaid-diagram figcaption { margin-top: 1rem; color: var(--ink); font: 1rem/1.5 var(--sans); text-align: center; }
