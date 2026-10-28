@@ -21,28 +21,35 @@ export function render(root, site, documents) {
   for (const doc of documents) {
     if (routes.has(doc.route)) throw new Error(`${doc.source}: duplicate route ${doc.route}`);
     routes.add(doc.route);
-    if (doc.kind === 'page' && ['posts', 'tags', 'assets', 'css', 'js', 'fonts'].includes(doc.slug)) throw new Error(`${doc.source}: reserved page slug ${doc.slug}`);
+    if (doc.kind === 'page' && ['posts', 'tags', 'assets', 'css', 'js', 'fonts', 'preview'].includes(doc.slug)) throw new Error(`${doc.source}: reserved page slug ${doc.slug}`);
   }
   const seriesByRoute = indexSeries(documents);
+  const previewDocuments = documents.map(d => d.kind === 'post' && d.draft
+    ? { ...d, route: `/preview/${d.slug}/`, url: local(`/preview/${d.slug}/`) } : d);
+  const previewSeriesByRoute = indexSeries(previewDocuments, true);
+  const draftPosts = previewDocuments.filter(d => d.kind === 'post' && d.draft)
+    .sort((a, b) => b.date.localeCompare(a.date) || a.slug.localeCompare(b.slug));
   const published = documents.filter(d => !d.draft);
   const posts = published.filter(d => d.kind === 'post').sort((a, b) => a.date === b.date ? (a.slug < b.slug ? -1 : 1) : (a.date > b.date ? -1 : 1));
   const tags = [...new Set(posts.flatMap(d => d.tags))].sort().map(name => ({ name: tagLabel(name), slug: tagSlug(name), url: local(`/tags/${tagSlug(name)}/`), posts: posts.filter(d => d.tags.includes(name)) }));
   const pages = [
     { route: '/', title: site.title, description: site.description, template: 'index.html', posts },
+    { route: '/preview/', title: 'Draft previews', description: 'Work in progress. Anyone with a direct link can read these drafts.', template: 'index.html', posts: draftPosts, preview: true, noindex: true },
+    ...draftPosts.map(d => ({ ...d, template: 'post.html', preview: true, noindex: true })),
     ...published.map(d => ({ ...d, template: d.kind === 'post' ? 'post.html' : 'page.html' })),
     { route: '/tags/', title: 'Tags', description: 'Browse articles by topic.', template: 'tags.html', tags },
     ...tags.map(tag => ({ route: `/tags/${tag.slug}/`, title: tag.name, description: `Articles tagged ${tag.name}.`, template: 'index.html', posts: tag.posts })),
     { route: '/404.html', title: 'Page not found', description: 'This page could not be found.', template: '404.html', noindex: true }
   ];
-  const available = new Set(pages.map(p => p.route));
+  const available = new Set(pages.filter(p => !p.preview).map(p => p.route));
   const navigation = site.navigation.map(n => {
     if (!available.has(n.path)) throw new Error(`Navigation target does not exist: ${n.path}`);
     return { ...n, url: local(n.path) };
   });
   for (const page of pages) {
-    const context = { site, artwork, navigation, home: local('/'), stylesheet: local('/css/style.css'), feed: local('/feed.xml'), page: { seriesNav: seriesByRoute.get(page.route) ?? null, date: null, updated: null, body: '', tags: [], noindex: false, ...page, canonical: absolute(page.route), tagLinks: (page.tags && page.kind ? page.tags : []).map(name => ({ name: tagLabel(name), url: local(`/tags/${tagSlug(name)}/`) })) } };
+    const context = { site, artwork, navigation, home: local('/'), stylesheet: local('/css/style.css'), feed: local('/feed.xml'), page: { seriesNav: (page.preview ? previewSeriesByRoute : seriesByRoute).get(page.route) ?? null, previewIndex: local('/preview/'), preview: false, date: null, updated: null, body: '', tags: [], noindex: false, ...page, canonical: absolute(page.route), tagLinks: (page.tags && page.kind ? page.tags : []).map(name => ({ name: tagLabel(name), url: local(`/tags/${tagSlug(name)}/`) })) } };
     // Standalone page tags are accepted as metadata; only articles join tag archives.
-    if (page.kind === 'page') context.page.tagLinks = [];
+    if (page.kind === 'page' || page.preview) context.page.tagLinks = [];
     add(page.route.endsWith('/') ? `${page.route.slice(1)}index.html` : page.route.slice(1), env.render(page.template, context));
   }
   add('.nojekyll', '');

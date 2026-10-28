@@ -1,5 +1,5 @@
 // Index lightweight metadata once. Shared entry arrays never contain article bodies.
-export function indexSeries(documents) {
+export function indexSeries(documents, includeDrafts = false) {
   const groups = new Map();
   for (const doc of documents) {
     if (doc.kind !== 'post' || !doc.series) continue;
@@ -11,7 +11,7 @@ export function indexSeries(documents) {
     }
     if (group.title !== title) throw new Error(`${doc.source}: series ${id} title differs from ${group.source}`);
     if (group.parts.has(part)) throw new Error(`${doc.source}: duplicate part ${part} in series ${id} (also ${group.parts.get(part).source})`);
-    group.parts.set(part, { source: doc.source, part, title: doc.title, route: doc.draft ? null : doc.route, url: doc.draft ? null : doc.url });
+    group.parts.set(part, { source: doc.source, part, title: doc.title, route: (doc.draft && !includeDrafts) ? null : doc.route, url: (doc.draft && !includeDrafts) ? null : doc.url });
   }
   const byRoute = new Map();
   for (const group of groups.values()) {

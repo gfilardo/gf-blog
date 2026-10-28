@@ -172,8 +172,8 @@ test('series lists ordered parts, exposes only draft titles and links published 
   assert.match(html, /rel="prev" href="\/blog\/posts\/first\/"/);
   assert.match(html, /rel="next" href="\/blog\/posts\/last\/"/);
   assert.ok(!files.has('posts/upcoming/index.html'));
-  for (const contents of files.values()) {
-    assert.ok(!String(contents).includes('UNPUBLISHED BODY'));
+  for (const [file, contents] of files) {
+    if (!file.startsWith('preview/')) assert.ok(!String(contents).includes('UNPUBLISHED BODY'));
     assert.ok(!String(contents).includes('/posts/upcoming/'));
   }
   for (const name of ['index.html', 'feed.xml', 'sitemap.xml']) assert.ok(!String(files.get(name)).includes('upcoming'));
@@ -284,4 +284,41 @@ test('inline Mermaid renders accessible, deterministic diagrams with distinct ID
   assert.equal(new Set(ids).size, ids.length);
   for (const [, ref] of first.matchAll(/url\(#([^)]+)\)/g)) assert.ok(ids.includes(ref));
   assert.throws(() => parseContent('broken.md', article('', '```mermaid\nnot-a-diagram\n```'), 'post', config), /broken.md:/);
+});
+
+test('draft previews stay unlisted and move to published routes on release', async t => {
+  const dir = await fixture(t);
+  const draftPath = path.join(dir, 'content/posts/draft.md');
+  const raw = article('draft: true\ntags: [preview_topic]', 'DRAFT BODY');
+  await writeFile(draftPath, raw);
+  let files = await build(dir, { basePath: '/blog' });
+  assert.match(files.get('preview/index.html'), /href="\/blog\/preview\/example\/"/);
+  assert.match(files.get('preview/example/index.html'), /DRAFT BODY/);
+  assert.match(files.get('preview/example/index.html'), /noindex, nofollow/);
+  assert.match(files.get('preview/example/index.html'), /href="\/blog\/preview\/"/);
+  assert.ok(!files.has('posts/example/index.html'));
+  assert.ok(!files.has('private/index.html'));
+  assert.ok(!files.has('tags/preview-topic/index.html'));
+  for (const file of ['index.html', 'tags/index.html', 'feed.xml', 'sitemap.xml']) {
+    assert.doesNotMatch(files.get(file), /preview_topic|preview-topic|\/preview\//);
+  }
+  await writeFile(draftPath, raw.replace('draft: true', 'draft: false'));
+  files = await build(dir);
+  assert.ok(!files.has('preview/example/index.html'));
+  await assert.rejects(readFile(path.join(dir, 'build/preview/example/index.html')), /ENOENT/);
+  assert.match(files.get('feed.xml'), /posts\/example/);
+  assert.ok(files.has('tags/preview-topic/index.html'));
+  assert.doesNotMatch(files.get('posts/example/index.html'), /name="robots"/);
+  assert.match(files.get('preview/index.html'), /No drafts to preview/);
+  await writeFile(draftPath, raw);
+  files = await build(dir);
+  assert.ok(!files.has('posts/example/index.html'));
+  assert.ok(files.has('preview/example/index.html'));
+});
+
+test('obsolete private metadata and preview route are rejected', async t => {
+  assert.throws(() => parseContent('private.md', article('private: true'), 'post', config), /private.md:/);
+  const dir = await fixture(t);
+  await writeFile(path.join(dir, 'content/pages/preview.md'), '---\ntitle: Preview\nslug: preview\ndescription: Collision\n---\nBody');
+  await assert.rejects(build(dir), /reserved page slug preview/);
 });

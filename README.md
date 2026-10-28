@@ -156,9 +156,9 @@ The repository includes a three-part example:
 
 Set `draft: true` on an upcoming article and assign its series and part number.
 **This announces its title and position on published sibling articles.** Its body
-and URL remain unpublished, and it is excluded from article indexes, tag archives,
+is available at its preview URL, and it is excluded from public article indexes, tag archives,
 RSS, and the sitemap. Keep a draft out of the series until its title is ready to
-announce. An entirely draft series creates no public pages.
+announce. An entirely draft series appears only in previews.
 
 To check your changes locally:
 
@@ -177,6 +177,24 @@ publication date, and rebuild. The contents lists and previous/next links update
 automatically. A future date alone does **not** keep an article unpublished; use
 `draft: true` until it is ready. Building updates local output; publication follows
 the repository's deployment workflow.
+
+### Draft previews
+
+`draft: true` is the only flag needed to preview an unfinished article. Draft
+articles are generated at `/preview/<slug>/` and listed on the unlisted
+`/preview/` page. These pages carry `noindex, nofollow` and cannot be added to
+site navigation. Drafts stay out of the public home page, tag archives, RSS,
+and sitemap; their tags do not create archives.
+
+Public series lists show draft parts as unlinked “Coming soon” entries. Inside
+a draft preview, series navigation can link to other draft previews and
+published parts. Setting `draft: false` publishes the article at `/posts/<slug>/`
+and removes its old preview page on the next build. The `/preview/` page slug
+is reserved. Standalone page drafts remain excluded from output.
+
+Preview pages are unlisted, not access-controlled: anyone with the URL can read
+or share them. Search-engine directives are advisory. There is no `private`
+flag; existing `private` metadata should be removed.
 
 ### Fix validation errors
 
@@ -216,7 +234,7 @@ are outside the initial scope. Readers need no JavaScript to read or navigate it
 | --- | --- | --- |
 | FR-01 | Author articles and standalone pages in Markdown with YAML front matter. | A valid source file produces an HTML page with its title and rendered body; headings, links, lists, images, fenced code, and tables work. |
 | FR-02 | Validate content before publication. | Missing required fields, invalid calendar dates, unknown metadata keys, invalid slugs, and duplicate routes stop the build with source-specific diagnostics. |
-| FR-03 | Exclude drafts from publication. | Draft bodies and URLs are never published. Draft titles explicitly assigned to a series appear only in that series’ contents list as “Coming soon”; drafts stay out of indexes, feeds, and sitemaps. Future dates alone do not hide content. |
+| FR-03 | Exclude drafts from publication. | Draft articles render only under `/preview/`, with noindex/nofollow; standalone page drafts remain excluded. Draft titles explicitly assigned to a series appear only in that series’ contents list as “Coming soon”; drafts stay out of public indexes, feeds, and sitemaps. Future dates alone do not hide content. |
 | FR-04 | Render shared layouts using an existing Node.js template engine. | Templates can interpolate escaped values, insert explicitly trusted HTML, branch on values, and iterate over collections; invalid syntax and missing required output values fail the build. |
 | FR-05 | Generate a home page listing published articles newest first. | Each entry links to its article and shows title, publication date, and description. Equal dates sort by slug; zero articles produces a useful empty state. |
 | FR-06 | Publish predictable URLs and navigation. | Articles use `/posts/<slug>/`, standalone pages use `/<slug>/`, and shared navigation links to the index and configured pages. |
@@ -224,7 +242,7 @@ are outside the initial scope. Readers need no JavaScript to read or navigate it
 | FR-08 | Emit basic discovery metadata. | Pages contain a title, description, language, and canonical URL; published articles appear in valid RSS and sitemap XML. |
 | FR-09 | Provide a repeatable local build and preview. | `npm run build` creates a complete `build/`; `npm run preview` serves it locally with directory URLs and a 404 fallback. Installed dependencies suffice for an offline build. |
 | FR-10 | Support GitHub Pages deployment. | The same build supports a site at the domain root or under a repository path; the generated artifact contains `index.html`, `404.html`, and `.nojekyll`. |
-| FR-11 | Fail safely and remove stale output on successful rebuilds. | Validation or rendering failure leaves the previous `build/` intact; success replaces it completely, removing pages for deleted or newly drafted articles. |
+| FR-11 | Fail safely and remove stale output on successful rebuilds. | Validation or rendering failure leaves the previous `build/` intact; success replaces it completely, removing deleted pages and obsolete publication/preview routes. |
 | FR-12 | Produce readable, accessible static pages. | Layouts use semantic landmarks, one page-level heading, a skip link, visible keyboard focus, and responsive styling; navigation and article content work with JavaScript disabled. |
 | FR-13 | Group articles by optional tags. | `/tags/` lists published article tags; `/tags/<tag>/` lists matching articles newest first. Changing tags does not change article URLs. |
 

@@ -12,7 +12,7 @@
   <link rel="canonical" href="{{ page.canonical }}">
   <link rel="stylesheet" href="{{ stylesheet }}">
   <link rel="alternate" type="application/rss+xml" title="{{ site.title }}" href="{{ feed }}">
-  {% if page.noindex %}<meta name="robots" content="noindex">{% endif %}
+  {% if page.noindex %}<meta name="robots" content="noindex{% if page.preview %}, nofollow{% endif %}">{% endif %}
 </head>
 <body>
   <a class="skip" href="#main">Skip to content</a>
