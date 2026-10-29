@@ -92,7 +92,7 @@ The companion examples include a dashboard that receives full snapshots and a se
 
 ## Why do we await Fetch twice?
 
-The familiar JSON request has two separate waits:
+The familiar JSON request involves two separate `await`s:
 
 ```js
 // First the headers, then the complete JSON body.
@@ -101,7 +101,7 @@ if (!response.ok) throw new Error(`HTTP ${response.status}`);
 const jobs = await response.json();
 ```
 
-The first wait gives us a `Response` once the status and headers are available. It does not wait for the complete body, or even require the first body byte to have arrived. The second wait reads the body to completion and parses it as JSON. `response.text()` also waits for the entire body, returning text instead.
+The first `await` gives us a `Response` once the status and headers are available. It does not wait for the complete body, or even require the first body byte to have arrived. The second `await` reads the body to completion and parses it as JSON. `response.text()` also waits for the entire body, returning text instead.
 
 That distinction is easy to overlook when a small response arrives almost immediately. With a live stream, it becomes the whole point: the headers are available, but the body may keep arriving for minutes or hours. Waiting for `response.text()` would accumulate that body until it ends; `response.json()` would additionally expect one JSON document, not SSE framing.
 
