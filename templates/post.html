@@ -21,7 +21,9 @@
     </details>
   </nav>
   {% endif %}
-  <div class="prose">{{ page.body | safe }}</div>
+  <div class="prose">{{ page.body | safe }}
+    {% if page.companion %}<p class="companion-note">Curious about how this works under the hood? The <a href="{{ page.companion }}">companion examples</a> include the complete code, setup instructions, and tests.</p>{% endif %}
+  </div>
   {% if page.seriesNav and (page.seriesNav.previous or page.seriesNav.next) %}
   <nav class="series-pagination" aria-label="More in this series">
     {% if page.seriesNav.previous %}<a rel="prev" href="{{ page.seriesNav.previous.url }}"><span class="meta">← Previous in series · Part {{ page.seriesNav.previous.part }}</span>{{ page.seriesNav.previous.title }}</a>{% endif %}

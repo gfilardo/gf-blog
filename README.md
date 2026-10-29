@@ -512,4 +512,10 @@ a crash occurred during replacement, recover the previous output from a
 
 ## Companion examples
 
-Complete article examples live in the sibling [gf-blog-examples](../gf-blog-examples/README.md) repository, organized by article slug. The blog keeps short explanatory excerpts; example dependencies and tests run separately. The companion currently has no remote; add public article links when it is published.
+Complete article examples live in the sibling [gf-blog-examples](../gf-blog-examples/README.md) repository, organized by article slug. The blog keeps short explanatory excerpts; example dependencies and tests run separately. To show a link below an article, add an optional `companion` URL to its front matter:
+
+```yaml
+companion: https://github.com/gfilardo/gf-blog-examples/tree/main/http-query-can-i-just-use-it
+```
+
+Use the article's example folder, which can contain more than one runnable example. The field accepts an absolute HTTPS URL. Omit it for articles without companion code. Published articles and draft previews use the same note; there is no separate boolean flag.

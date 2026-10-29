@@ -322,3 +322,20 @@ test('obsolete private metadata and preview route are rejected', async t => {
   await writeFile(path.join(dir, 'content/pages/preview.md'), '---\ntitle: Preview\nslug: preview\ndescription: Collision\n---\nBody');
   await assert.rejects(build(dir), /reserved page slug preview/);
 });
+
+test('optional companion links render for articles and previews and require HTTPS', async t => {
+  for (const companion of ['true', '"javascript:alert(1)"', '"../examples"', '"https://"']) {
+    assert.throws(() => parseContent('article.md', article(`companion: ${companion}`), 'post', config), /article.md:/);
+  }
+  const dir = await fixture(t);
+  const url = 'https://github.com/gfilardo/gf-blog-examples/tree/main/example';
+  const file = path.join(dir, 'content/posts/example.md');
+  await writeFile(file, article(`companion: ${url}`));
+  const published = await build(dir);
+  assert.ok(published.get('posts/example/index.html').includes(`href="${url}">companion examples</a>`));
+  assert.ok(!published.get('posts/hello-world/index.html').includes('companion-note'));
+  await writeFile(file, article(`companion: ${url}\ndraft: true`));
+  const draft = await build(dir);
+  assert.ok(draft.get('preview/example/index.html').includes(`href="${url}">companion examples</a>`));
+  assert.ok(!draft.has('posts/example/index.html'));
+});
