@@ -9,7 +9,7 @@ tags:
   - architecture
 series:
   id: http-query-and-sse
-  title: HTTP QUERY and live results
+  title: HTTP QUERY in practice
   part: 1
 draft: false
 ---
@@ -44,53 +44,17 @@ Yes, and this idea has been around for a while. The [proposal's history](https:/
 
 Let's search a tiny catalogue. This example uses Node.js 24 and Express 5.3.0, with its `app.query` routing helper. Support depends on the installed versions: the [Express documentation](https://expressjs.com/en/api/application/#app.query) lists the required Node versions, but a suitable runtime alone does not add the helper to an older framework.
 
-In a separate scratch project, install Express with `npm install express@5.3.0`, save this as `server.mjs`, and run `node server.mjs`:
+The complete server and browser example lives in the companion repository, **gf-blog-examples**, in the `http-query-can-i-just-use-it` folder. The interesting part of the browser call is small:
 
 ```js
-import express from 'express';
-
-const app = express();
-const products = [
-  { id: 1, category: 'books', price: 18 },
-  { id: 2, category: 'books', price: 35 },
-  { id: 3, category: 'games', price: 24 },
-];
-
-app.use(express.json({ limit: '16kb' }));
-app.get('/', (_req, res) => {
-  res.type('html').send('<h1>QUERY playground</h1>');
-});
-
-app.query('/products/search', (req, res) => {
-  res.set('Cache-Control', 'no-store');
-  const { category, maxPrice } = req.body ?? {};
-  if (typeof category !== 'string' ||
-      typeof maxPrice !== 'number' ||
-      !Number.isFinite(maxPrice) || maxPrice < 0) {
-    return res.status(400).json({ error: 'Expected category and maxPrice' });
-  }
-
-  const matches = products.filter(product =>
-    product.category === category && product.price <= maxPrice
-  );
-  res.json({ matches });
-});
-
-app.listen(3000, '127.0.0.1');
-```
-
-Open `http://127.0.0.1:3000/` and run this in that page's browser console:
-
-```js
+// A read whose filter travels in the request body.
 const response = await fetch('/products/search', {
   method: 'QUERY',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({ category: 'books', maxPrice: 25 }),
 });
-
 if (!response.ok) throw new Error(`HTTP ${response.status}`);
-console.log(await response.json());
-// { matches: [{ id: 1, category: 'books', price: 18 }] }
+const { matches } = await response.json();
 ```
 
 With `maxPrice` set to `40`, both books match. With the original price limit and `category` set to `'games'`, the result is the game instead. Same URL, different selection in the body.
@@ -101,7 +65,7 @@ There isn't much ceremony here. Express parses the JSON, we check the two fields
 
 Fetch does not need a new `fetch.query()` function. It already accepts method names beyond the familiar ones, and `QUERY` is not forbidden. HTTP method names are case-sensitive: the standard defines `QUERY`, while lowercase `query` names a different method. Fetch normalizes some familiar names, but that behavior should not be assumed here.
 
-I have kept the page and API on the same origin and set `Cache-Control: no-store`. For now, I want to see a request go out and the right data come back. We can give the infrastructure something more interesting to do in a moment.
+The companion example keeps the page and API on the same origin and sets `Cache-Control: no-store`. For now, I want to see a request go out and the right data come back. We can give the infrastructure something more interesting to do in a moment.
 
 ## The interesting part: the answer goes missing
 

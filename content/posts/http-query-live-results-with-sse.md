@@ -1,5 +1,5 @@
 ---
-title: "Can HTTP QUERY keep the results coming?"
+title: "Live updates with HTTP QUERY and server-sent events"
 slug: http-query-live-results-with-sse
 date: "2026-10-27"
 description: "From a JSON filter to a live response: QUERY, SSE, EventSource, and what happens when a stream disconnects."
@@ -10,11 +10,17 @@ tags:
   - SSE
 series:
   id: http-query-and-sse
-  title: HTTP QUERY and live results
+  title: HTTP QUERY in practice
   part: 2
 draft: true
 ---
-Our product search works. A JSON filter goes in, a list of matching products comes back. Then a price changes, and the list on the screen is already out of date.
+The first article gave us a search endpoint: a JSON filter goes in, matching results come back. Now imagine an operations dashboard for background jobs. An operator is watching imports for the warehouse project, filtered to running or failed jobs. While the page is open, one import finishes and another fails. A list fetched once no longer tells them what needs attention.
+
+This is a useful place for live results. Completed jobs should leave the view; failed jobs should remain visible for investigation. A fuller dashboard might combine project, job type, status, owner, and submission time in its filter. The example below keeps just project and status so the streaming behavior stays easy to follow.
+
+![Illustrative warehouse dashboard showing four imports: one failed, two running with progress indicators, and one queued. A completed import has left the filtered view.](/assets/posts/http-query-live-results-with-sse/import-jobs-dashboard.png)
+
+The dashboard above includes queued jobs too; our example uses a smaller running-or-failed selection.
 
 Polling would be one answer. Another would be to keep the response open and send new results as they become available. Could the same `QUERY` request start that conversation?
 
@@ -27,7 +33,8 @@ Server-sent events, or SSE, provide a text format for delivering events. EventSo
 The native [EventSource interface](https://html.spec.whatwg.org/multipage/server-sent-events.html#the-eventsource-interface) starts a `GET` request. Its constructor accepts a URL and an option for credentials, but no method, request body, or arbitrary headers. So this cannot simply become our JSON-filtered `QUERY` request:
 
 ```js
-const events = new EventSource('/products/live');
+// Native EventSource opens a GET request, with no filter body.
+const events = new EventSource('/jobs/live');
 ```
 
 That is a restriction of this API. It does not mean a server must reject every other method before returning an event stream.
@@ -42,13 +49,15 @@ An SSE response has a `Content-Type` of `text/event-stream`. A small event might
 
 ```text
 event: snapshot
-data: {"matches":[{"id":1,"price":18}]}
+data: {"matches":[{"id":1,"project":"warehouse","status":"running"}]}
 
 ```
 
 The blank line ends the event. The `event` field names its type; `data` carries text that our application happens to interpret as JSON. SSE itself does not require JSON.
 
-More events follow in the same response body. The server is not sending another HTTP status line and another set of response headers each time.
+The same endpoint can send the current matching jobs as its first event, then keep sending updates in that same response body. There is no need for a separate request to load the initial list and another to watch it. One request opens the response; the first snapshot populates the view; later events keep it current. Those later events can contain complete replacement snapshots or individual changes, according to the API contract.
+
+The server is not sending another HTTP status line and another set of response headers each time. This snapshot-then-updates pattern works with either native EventSource over `GET` or our Fetch-based `QUERY` request. The server-side state problem is the same. EventSource supplies event parsing, automatic reconnection, and event-ID tracking; with Fetch, a parser and client logic provide those pieces. Neither automatically recovers missing application state.
 
 ```mermaid Several events can arrive within one HTTP response.
 sequenceDiagram
@@ -63,68 +72,53 @@ sequenceDiagram
 
 There is also a distinction between an HTTP response and a network connection. Under HTTP/1.1, a long-running response occupies that connection while it is being delivered. HTTP/2 can carry [multiple concurrent streams on one connection](https://www.rfc-editor.org/rfc/rfc9113.html#section-5). Opening another event stream therefore does not necessarily mean opening another TCP connection. It still consumes resources at the browser, edge, and application.
 
-## A small stream we can inspect
+## From a filter to a live view
 
-Here is a standalone example using Node.js 24 and Express 5.3.0, as in part one. In a scratch project with `npm install express@5.3.0`, it can be saved as `server.mjs` and started with `node server.mjs`.
-
-It simulates three catalogue snapshots, one second apart. The book moves above our price limit and then back below it. These are scripted values, not a database change feed; restarting the request starts the demonstration again.
+The browser can open that response with a regular Fetch call:
 
 ```js
-import express from 'express';
-
-const app = express();
-app.use(express.json({ limit: '16kb' }));
-
-app.query('/products/live', (req, res) => {
-  const { category, maxPrice } = req.body ?? {};
-  if (typeof category !== 'string' ||
-      typeof maxPrice !== 'number' ||
-      !Number.isFinite(maxPrice) || maxPrice < 0) {
-    return res.status(400).json({ error: 'Expected category and maxPrice' });
-  }
-
-  res.set({
-    'Content-Type': 'text/event-stream; charset=utf-8',
-    'Cache-Control': 'no-store',
-  });
-  res.flushHeaders();
-
-  const prices = [18, 28, 22];
-  let index = 0;
-  let timer;
-  res.once('close', () => clearInterval(timer));
-
-  timer = setInterval(() => {
-    const products = [
-      { id: 1, category: 'books', price: prices[index] },
-      { id: 2, category: 'games', price: 24 },
-    ];
-    const matches = products.filter(product =>
-      product.category === category && product.price <= maxPrice
-    );
-    const data = JSON.stringify({ matches });
-    const accepted = res.write(`event: snapshot\ndata: ${data}\n\n`);
-    index += 1;
-
-    // This tiny example disconnects slow consumers instead of queuing more data.
-    if (!accepted) {
-      clearInterval(timer);
-      res.destroy();
-      return;
-    }
-    if (index === prices.length) {
-      clearInterval(timer);
-      res.end('event: complete\ndata: {}\n\n');
-    }
-  }, 1000);
+// The request carries the filter; the response carries SSE events.
+const response = await fetch('/jobs/live', {
+  method: 'QUERY',
+  headers: { 'Content-Type': 'application/json', Accept: 'text/event-stream' },
+  body: JSON.stringify({ project: 'warehouse', statuses: ['running', 'failed'] }),
 });
-
-app.listen(3000, '127.0.0.1');
 ```
 
-With a books filter and a maximum price of 25, the snapshots contain the book, then an empty list, then the book again at 22. Sending complete snapshots keeps the client simple: each one replaces the previous selection. A real implementation could observe catalogue changes and reevaluate the filter instead of walking through a fixed array.
+Imagine two imports running. When one completes, it leaves the selection. When the other fails, it stays visible with its new status. Sending complete snapshots keeps the client simple: each one replaces the previous list.
 
-The `complete` event belongs to this example's application protocol. SSE does not assign that name any special meaning. It gives our client a way to distinguish an intentional finish from a stream that ended unexpectedly.
+The complete runnable example lives in the companion repository, **gf-blog-examples**, in the `http-query-live-results-with-sse` folder. It includes the server, a browser page, validation and cleanup. Its three snapshots are scripted so the behavior is easy to inspect; they are not a database change feed. The same folder also preserves the earlier reconnection and replay demo under `resumable-stream`.
+
+## Why do we await Fetch twice?
+
+The familiar JSON request has two separate waits:
+
+```js
+// First the headers, then the complete JSON body.
+const response = await fetch('/jobs');
+if (!response.ok) throw new Error(`HTTP ${response.status}`);
+const jobs = await response.json();
+```
+
+The first wait gives us a `Response` once the status and headers are available. It does not wait for the complete body, or even require the first body byte to have arrived. The second wait reads the body to completion and parses it as JSON. `response.text()` also waits for the entire body, returning text instead.
+
+That distinction is easy to overlook when a small response arrives almost immediately. With a live stream, it becomes the whole point: the headers are available, but the body may keep arriving for minutes or hours. Waiting for `response.text()` would accumulate that body until it ends; `response.json()` would additionally expect one JSON document, not SSE framing.
+
+Instead, `response.body` lets us read progressively. Each read waits for another chunk, or the end of the stream. The companion server makes the separation visible by sending the headers before its first timed snapshot. A later disconnect can still fail a body read after Fetch has resolved.
+
+```mermaid Fetch can resolve while the response body is still arriving.
+sequenceDiagram
+    participant C as Browser code
+    participant S as Server
+    C->>S: Request
+    S-->>C: Status and headers
+    Note over C: await fetch resolves
+    S-->>C: Body chunk
+    Note over C: Stream reader can process data
+    S-->>C: More body chunks
+    S-->>C: Response ends, if finite
+    Note over C: text() or json() can finish
+```
 
 ## Bytes need decoding; text needs parsing
 
@@ -132,93 +126,38 @@ A Fetch response body arrives in chunks, but those chunks are not events. One ch
 
 There are two steps here. A [streaming text decoder](https://encoding.spec.whatwg.org/#interface-textdecoderstream) turns bytes into text without losing characters split across chunks. An SSE parser then turns text into complete events. Besides blank lines, the format has rules for multiline data, comments, and line endings. A parser is a better fit than a hurried `split('\n\n')`.
 
-This browser-module example uses [eventsource-parser](https://github.com/rexxars/eventsource-parser), installed with `npm install eventsource-parser@3` in a frontend project whose bundler resolves package imports. The frontend is assumed to serve or proxy `/products/live` on the same origin. A separate API origin would need the CORS configuration discussed in part one.
+With a parser doing that work, the stream becomes a sequence of events our application can handle:
 
 ```js
-import { EventSourceParserStream } from 'eventsource-parser/stream';
-
-export async function watchProducts(url, filter, onSnapshot, signal) {
-  const response = await fetch(url, {
-    method: 'QUERY',
-    headers: {
-      'Content-Type': 'application/json',
-      'Accept': 'text/event-stream',
-    },
-    body: JSON.stringify(filter),
-    signal,
-  });
-
-  const type = response.headers.get('content-type')
-    ?.split(';')[0].trim().toLowerCase();
-  if (!response.ok || type !== 'text/event-stream' || !response.body) {
-    await response.body?.cancel();
-    throw new Error(`Expected an event stream; received HTTP ${response.status}`);
-  }
-
-  const reader = response.body
-    .pipeThrough(new TextDecoderStream())
-    .pipeThrough(new EventSourceParserStream())
-    .getReader();
-
-  try {
-    while (true) {
-      const { value: event, done } = await reader.read();
-      if (done) throw new Error('Stream ended without a complete event');
-      if (event.event === 'complete') return;
-      if (event.event === 'snapshot') onSnapshot(JSON.parse(event.data));
-    }
-  } finally {
-    try { await reader.cancel(); }
-    finally { reader.releaseLock(); }
-  }
+// After checking the response, decode bytes and parse complete SSE events.
+const events = response.body
+  .pipeThrough(new TextDecoderStream())
+  .pipeThrough(new EventSourceParserStream());
+for await (const event of events) {
+  if (event.event === 'snapshot') showJobs(JSON.parse(event.data).matches);
 }
-
-const controller = new AbortController();
-watchProducts(
-  '/products/live',
-  { category: 'books', maxPrice: 25 },
-  snapshot => console.log(snapshot.matches),
-  controller.signal,
-).catch(error => {
-  if (!controller.signal.aborted) console.error(error);
-});
-
-// When the view is no longer needed: controller.abort();
 ```
 
-This deliberately handles one response. It decodes, parses, and delivers snapshots, and it releases the stream when finished or cancelled. The parser does not open requests or reconnect them. Those decisions remain outside it.
+This is an excerpt: `EventSourceParserStream` comes from [eventsource-parser](https://github.com/rexxars/eventsource-parser), and `showJobs` represents replacing the displayed list. The companion example includes the imports, response checks, cancellation and completion handling. The parser turns text into events; it does not open requests or reconnect them.
 
-## Reconnect to what, exactly?
+## A caveat: reconnecting does not reconcile the view
 
-Now suppose the stream disconnects after the first snapshot. QUERY's idempotency permits another request, but it cannot tell the application which updates the reader missed.
+Both EventSource and a Fetch-based client need an API that defines how the view stays consistent. EventSource reconnects automatically, but that alone does not recover missed changes. Two common patterns are:
 
-With our demonstration, a new request replays the three scripted snapshots. With a real catalogue, a new request might start with the current selection. Either can be a valid read. Neither promises a continuous history.
+- **Full snapshots:** each update replaces the displayed selection. Every new connection starts with a fresh snapshot, so reconnecting brings the view up to date without replaying intermediate changes.
+- **A snapshot followed by changes:** the client builds its initial view, then applies additions, updates, and removals. After a disconnect, it needs either replay from a known position or a fresh snapshot that replaces its old state. The handoff between snapshot and changes must also avoid gaps.
 
-For a product list, a fresh snapshot may be enough: the screen needs to show what matches now. For an audit feed, missing the events between two snapshots would defeat the purpose of the application.
+EventSource remembers event IDs and can send `Last-Event-ID` when reconnecting. That is a resume hint, not a guarantee: the server must retain and replay the relevant changes, or provide a reset when it cannot. With Fetch, the client also owns the reconnection and cursor bookkeeping. Neither API reconciles application state on its own.
 
-That is the difference between **reconnecting** and **resuming**. Reconnecting establishes another response. Resuming requires an agreed position in an event history and a server that can continue from it.
+For this small dashboard, full snapshots are a reasonable starting point. The example sends complete selections, although its scripted sequence restarts on each request. A real endpoint would start each connection with the current matching jobs and send updated selections as they change. The screen needs an accurate current view; preserving every transition is a different requirement.
 
-Native EventSource tracks event IDs and can send `Last-Event-ID` when reconnecting. With Fetch, that bookkeeping and request header must be supplied by the client implementation. An `id` field alone does not create retained history or an acknowledgement from the application.
+## A different request, the same streaming response
 
-For example, an audit client might have applied event 41 when the connection disappears. Continuing after 41 requires the server to retain later events, interpret the cursor under the same filter and authorization, and define what happens when that cursor is too old. If events can be replayed, the consumer also needs a way to avoid applying the same change twice.
+The response streams in the same way as it would after a GET request: the server sends the SSE text format over HTTP, and the infrastructure forwards it as it arrives. What changes is the request that starts it. QUERY lets us send the filter in its body; it does not introduce a different way of delivering the events.
 
-There is a further boundary around the first snapshot. If a service reads the database and only then subscribes to updates, a change between those two actions could be missed. A consistent snapshot position plus replay from that position is one possible design. QUERY and SSE do not choose that design for us.
+The browser client does change. Native EventSource cannot initiate QUERY, so a Fetch-based client needs to provide the event parsing and reconnection behavior that EventSource normally supplies. The existing server-side streaming machinery can still be used.
 
-## The stream works locally. Does it stay live through the edge?
-
-The first article asked whether each layer would accept the method and preserve the body. A streaming response adds another question: does each layer forward data as it arrives?
-
-A proxy can accept the entire exchange while buffering the response. The handler writes a snapshot every second, but the browser receives several at once. From the application logs, everything looks healthy. From the screen, the feature feels broken.
-
-NGINX's [response-buffering controls](https://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_buffering) are one concrete example. Other gateways have their own buffering and timeout settings. `Cache-Control: no-store` prevents storage by compliant caches; it is not a universal instruction to flush every intermediary's buffers. Compression middleware may introduce buffering too.
-
-A useful integration check observes the arrival time of each event through the real public route. Time to the response headers alone cannot establish that streaming works.
-
-Quiet periods introduce another problem. A small SSE comment can act as a heartbeat, but the interval has to fit the actual idle timeouts. A heartbeat will not override a gateway's hard maximum response duration. Some deployments will need planned reconnections even when the network is healthy.
-
-Slow readers need a policy as well. Node's response writes expose backpressure; the example closes the stream when a write returns false, rather than accumulating an unbounded queue. A fuller implementation might pause production until the output drains. For snapshots, retaining only the newest unsent selection may be sensible; for an audit feed, silently discarding intermediate events would not be.
-
-Long-lived reads also keep resources and access alive. Disconnects should release timers and subscriptions. Permission changes and credential expiry need an explicit policy: a login check made when the request started does not automatically reevaluate itself ten minutes later.
+The small caveat is that both capabilities must apply to the same route. A working GET event stream elsewhere does not guarantee that the QUERY route uses the same buffering and timeout settings. NGINX's [response buffering](https://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_buffering), for example, can be configured per location. Once the request reaches the application and the response can flow back as events arrive, the existing streaming machinery is enough. These are the usual SSE deployment concerns, not a new set of requirements invented by QUERY.
 
 ## Would keeping EventSource be simpler?
 
@@ -228,7 +167,13 @@ For larger filters, an API could accept a POST that creates a saved query or sub
 
 Fetch plus QUERY is attractive when the input belongs in a body and the client already owns its stream lifecycle. It offers control over method, headers, cancellation, and reconnection. That control comes with work; a streaming parser is only one part of the client.
 
-WebSockets enter the discussion when the interaction needs frequent messages in both directions—for example, changing subscriptions over the same channel. SSE carries server-to-client events in an HTTP response; changing our filter here means another request. A WebSocket would not remove the need to define replay, authorization, or slow-consumer behavior.
+### Why SSE in 2026, when we have WebSockets?
+
+For this job dashboard, the browser sends a filter and then mostly listens. SSE fits that shape: updates arrive in an ordinary HTTP response, while occasional actions can remain ordinary API requests. Notifications, job progress, and live dashboards often have the same pattern. There is no need to design a two-way messaging protocol just to keep a list current, although proxy buffering and timeouts still need attention.
+
+Native EventSource also supplies parsing and automatic reconnection. Our Fetch-based QUERY version gives up that convenience, so it would be misleading to claim automatic reconnection as a benefit of this particular implementation. Event IDs help with resuming; they are not required merely to reconnect.
+
+[WebSockets](https://websockets.spec.whatwg.org/) are a better fit when messages travel frequently in both directions, subscriptions change over the same channel, or binary messages are useful. SSE carries text events from server to client; changing our filter here means another request. Neither choice removes the need to define replay, authorization, or slow-consumer behavior. The reason to choose SSE in 2026 is still practical: sometimes a request followed by a stream of updates is all the application needs.
 
 ## What have we gained?
 
@@ -236,4 +181,4 @@ The original question was whether a body-based read could keep delivering result
 
 Separating the pieces makes the choice easier to explain. QUERY describes the read. SSE describes the events in its response. Fetch gives the client access to that response. The application decides whether a disconnect calls for a fresh snapshot or a continuation of retained history.
 
-For our catalogue, a fresh filtered snapshot may be exactly what the screen needs. For an audit trail, it would be only the beginning of the design. The same transport can carry both; the promise to the reader is different.
+For our job dashboard, a fresh filtered snapshot may be exactly what the screen needs. For an audit trail, it would be only the beginning of the design. The same transport can carry both; the promise to the reader is different.
