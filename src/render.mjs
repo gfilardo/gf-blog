@@ -47,7 +47,7 @@ export function render(root, site, documents) {
     return { ...n, url: local(n.path) };
   });
   for (const page of pages) {
-    const context = { site, artwork, navigation, home: local('/'), stylesheet: local('/css/style.css'), feed: local('/feed.xml'), page: { seriesNav: (page.preview ? previewSeriesByRoute : seriesByRoute).get(page.route) ?? null, previewIndex: local('/preview/'), preview: false, companion: null, date: null, updated: null, body: '', tags: [], noindex: false, ...page, canonical: absolute(page.route), tagLinks: (page.tags && page.kind ? page.tags : []).map(name => ({ name: tagLabel(name), url: local(`/tags/${tagSlug(name)}/`) })) } };
+    const context = { site, artwork, navigation, home: local('/'), favicon: local('/favicon.svg'), stylesheet: local('/css/style.css'), feed: local('/feed.xml'), page: { seriesNav: (page.preview ? previewSeriesByRoute : seriesByRoute).get(page.route) ?? null, previewIndex: local('/preview/'), preview: false, companion: null, date: null, updated: null, body: '', tags: [], noindex: false, ...page, canonical: absolute(page.route), tagLinks: (page.tags && page.kind ? page.tags : []).map(name => ({ name: tagLabel(name), url: local(`/tags/${tagSlug(name)}/`) })) } };
     // Standalone page tags are accepted as metadata; only articles join tag archives.
     if (page.kind === 'page' || page.preview) context.page.tagLinks = [];
     add(page.route.endsWith('/') ? `${page.route.slice(1)}index.html` : page.route.slice(1), env.render(page.template, context));
