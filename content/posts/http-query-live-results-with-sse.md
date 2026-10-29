@@ -12,6 +12,7 @@ series:
   id: http-query-and-sse
   title: HTTP QUERY in practice
   part: 2
+companion: https://github.com/gfilardo/gf-blog-examples/tree/main/http-query-live-results-with-sse
 draft: true
 ---
 The first article gave us a search endpoint: a JSON filter goes in, matching results come back. Now imagine an operations dashboard for background jobs. An operator is watching imports for the warehouse project, filtered to running or failed jobs. While the page is open, one import finishes and another fails. A list fetched once no longer tells them what needs attention.
@@ -87,7 +88,7 @@ const response = await fetch('/jobs/live', {
 
 Imagine two imports running. When one completes, it leaves the selection. When the other fails, it stays visible with its new status. Sending complete snapshots keeps the client simple: each one replaces the previous list.
 
-The complete runnable example lives in the companion repository, **gf-blog-examples**, in the `http-query-live-results-with-sse` folder. It includes the server, a browser page, validation and cleanup. Its three snapshots are scripted so the behavior is easy to inspect; they are not a database change feed. The same folder also preserves the earlier reconnection and replay demo under `resumable-stream`.
+The companion examples include a dashboard that receives full snapshots and a separate demonstration of reconnection and replay. The dashboard uses scripted snapshots to make the behavior easy to inspect; it is not a database change feed.
 
 ## Why do we await Fetch twice?
 

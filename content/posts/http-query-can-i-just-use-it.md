@@ -11,6 +11,7 @@ series:
   id: http-query-and-sse
   title: HTTP QUERY in practice
   part: 1
+companion: https://github.com/gfilardo/gf-blog-examples/tree/main/http-query-can-i-just-use-it
 draft: false
 ---
 
@@ -40,32 +41,26 @@ Yes, and this idea has been around for a while. The [proposal's history](https:/
 
 `SEARCH` also already existed in WebDAV, standardized in 2008. It required XML request support but allowed other formats, and its successful multistatus responses followed WebDAV's XML conventions. So the story is not simply that `QUERY` finally lets us send JSON. It gives general-purpose queries a separate contract without inheriting that WebDAV response model.
 
-## Example: Start with something that returns JSON
+## A filter in the body
 
-Let's search a tiny catalogue. This example uses Node.js 24 and Express 5.3.0, with its `app.query` routing helper. Support depends on the installed versions: the [Express documentation](https://expressjs.com/en/api/application/#app.query) lists the required Node versions, but a suitable runtime alone does not add the helper to an older framework.
-
-The complete server and browser example lives in the companion repository, **gf-blog-examples**, in the `http-query-can-i-just-use-it` folder. The interesting part of the browser call is small:
+The request itself is unremarkable. The URL identifies the search, and the body describes which products we want:
 
 ```js
-// A read whose filter travels in the request body.
-const response = await fetch('/products/search', {
+// Same search endpoint, with the selection in the body.
+fetch('/products/search', {
   method: 'QUERY',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({ category: 'books', maxPrice: 25 }),
 });
-if (!response.ok) throw new Error(`HTTP ${response.status}`);
-const { matches } = await response.json();
 ```
 
-With `maxPrice` set to `40`, both books match. With the original price limit and `category` set to `'games'`, the result is the game instead. Same URL, different selection in the body.
+That is the idea, rather than a complete client implementation. Changing the filter changes the selection without changing the URL. The server interprets it and returns the matching products, just as our `POST` search did.
 
-There isn't much ceremony here. Express parses the JSON, we check the two fields, and the handler returns the matching products. The filter is deliberately small enough to read; it could grow into a nested expression without changing how we send it.
+`QUERY` is not tied to JSON. `Content-Type` identifies the body's format; the API defines what fields such as `category` and `maxPrice` mean.
 
-`QUERY` is not tied to JSON; an endpoint could accept another query format. The request should include `Content-Type` to identify its format. Here, `application/json` tells Express to parse JSON; our API still defines what `category` and `maxPrice` mean.
+Fetch already accepts method names beyond the familiar ones, so it does not need a new `fetch.query()` function. The uppercase spelling is deliberate: HTTP method names are case-sensitive, and `query` is not `QUERY`. Fetch normalizes some familiar names, but that behavior should not be assumed here.
 
-Fetch does not need a new `fetch.query()` function. It already accepts method names beyond the familiar ones, and `QUERY` is not forbidden. HTTP method names are case-sensitive: the standard defines `QUERY`, while lowercase `query` names a different method. Fetch normalizes some familiar names, but that behavior should not be assumed here.
-
-The companion example keeps the page and API on the same origin and sets `Cache-Control: no-store`. For now, I want to see a request go out and the right data come back. We can give the infrastructure something more interesting to do in a moment.
+Sending the request is the easy part. Whether the rest of the system understands it is the more interesting question.
 
 ## The interesting part: the answer goes missing
 
@@ -77,7 +72,7 @@ Now what? The client cannot tell whether the server finished the work or never r
 
 Our `POST` search can be repeatable too. We simply have to supply that extra knowledge to the caller. With `QUERY`, software that understands the method already has it.
 
-There is an important distinction here: the method permits automatic retries; it does not guarantee that your browser or proxy implements them for `QUERY`. The Fetch example above has no application retry loop. A successful response tells us nothing about what will happen after a dropped connection.
+There is an important distinction here: the method permits automatic retries; it does not guarantee that your browser or proxy implements them for `QUERY`. Choosing `QUERY` in a Fetch call does not add an application retry loop. A successful response tells us nothing about what will happen after a dropped connection.
 
 ```mermaid A retry is a new request, permitted only when the implementation and policy allow it.
 sequenceDiagram
@@ -140,7 +135,7 @@ Once the request reaches the application server, the runtime parser still has to
 
 Changing `POST` to `QUERY` may also affect your security rules. For example, a gateway configured to allow `POST /products/search` might reject the same request sent with `QUERY`. Those rules should be updated while keeping the existing login and permission checks: a request that only reads data can still expose private information.
 
-Retry behavior also depends on which component is responsible for it. Is it the client library? The proxy? A deliberately interrupted connection can reveal what actually happens. Can that component replay the body, and does it stop after a sensible number of attempts? Our three-product search is cheap. A report that takes a minute is a different proposition, even if repeating it is perfectly valid. Repeated attempts can multiply that cost, so retries need a limit. Another attempt will not repair an invalid filter, either. The handler must also remain a read: quietly adding “and reserve the stock” would break the promise we are making.
+Retry behavior also depends on which component is responsible for it. Is it the client library? The proxy? A deliberately interrupted connection can reveal what actually happens. Can that component replay the body, and does it stop after a sensible number of attempts? A small catalogue search is cheap. A report that takes a minute is a different proposition, even if repeating it is perfectly valid. Repeated attempts can multiply that cost, so retries need a limit. Another attempt will not repair an invalid filter, either. The handler must also remain a read: quietly adding “and reserve the stock” would break the promise we are making.
 
 ## And caching? The body changes the question
 
@@ -148,7 +143,7 @@ Two calls to `/products/search` can ask for completely different products. If a 
 
 That is why QUERY's [caching rules](https://www.rfc-editor.org/rfc/rfc10008.html#section-2.7) require the key to incorporate the request body and related metadata. Responses are cacheable, but a CDN that forwards QUERY does not necessarily know how to cache it correctly.
 
-I would leave `no-store` in place until there is a reason to change it. Then I would try different filters and different callers, change the underlying products, and inspect actual cache hits. If the catalogue belongs to a tenant, checking that one tenant cannot receive another's results is part of that work. Freshness and authorization do not disappear because we changed the method.
+I would start with caching disabled (`Cache-Control: no-store`) until there is a reason to enable it. Then I would try different filters and different callers, change the underlying products, and inspect actual cache hits. If the catalogue belongs to a tenant, checking that one tenant cannot receive another's results is part of that work. Freshness and authorization do not disappear because we changed the method.
 
 Nor was `POST` categorically uncacheable: HTTP allows its responses to be reused for subsequent `GET` or `HEAD` requests under specific conditions. `QUERY` gives this kind of read a clearer contract; it does not magically switch caching on across the stack.
 
