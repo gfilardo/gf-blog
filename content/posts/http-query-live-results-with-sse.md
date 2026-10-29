@@ -13,7 +13,7 @@ series:
   title: HTTP QUERY in practice
   part: 2
 companion: https://github.com/gfilardo/gf-blog-examples/tree/main/http-query-live-results-with-sse
-draft: true
+draft: false
 ---
 The first article gave us a search endpoint: a JSON filter goes in, matching results come back. Now imagine an operations dashboard for background jobs. An operator is watching imports for the warehouse project, filtered to running or failed jobs. While the page is open, one import finishes and another fails. A list fetched once no longer tells them what needs attention.
 
