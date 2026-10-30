@@ -12,12 +12,12 @@
       "path": "/"
     },
     {
-      "title": "About",
-      "path": "/about/"
-    },
-    {
       "title": "Tags",
       "path": "/tags/"
+    },
+    {
+      "title": "About",
+      "path": "/about/"
     }
   ]
 }
