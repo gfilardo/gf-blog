@@ -58,7 +58,7 @@ The blank line ends the event. The `event` field names its type; `data` carries 
 
 The same endpoint can send the current matching jobs as its first event, then keep sending updates in that same response body. There is no need for a separate request to load the initial list and another to watch it. One request opens the response; the first snapshot populates the view; later events keep it current. Those later events can contain complete replacement snapshots or individual changes, according to the API contract.
 
-The server is not sending another HTTP status line and another set of response headers each time. This snapshot-then-updates pattern works with either native EventSource over `GET` or our Fetch-based `QUERY` request. The server-side state problem is the same. EventSource supplies event parsing, automatic reconnection, and event-ID tracking; with Fetch, a parser and client logic provide those pieces. Neither automatically recovers missing application state.
+The server does not send a new HTTP status line or another set of response headers for each update. Instead, the initial headers establish the `text/event-stream` contract, and all subsequent events travel down that single, long-lived response body. 
 
 ```mermaid Several events can arrive within one HTTP response.
 sequenceDiagram
@@ -71,7 +71,7 @@ sequenceDiagram
     Note over C,S: The same response remains open
 ```
 
-There is also a distinction between an HTTP response and a network connection. Under HTTP/1.1, a long-running response occupies that connection while it is being delivered. HTTP/2 can carry [multiple concurrent streams on one connection](https://www.rfc-editor.org/rfc/rfc9113.html#section-5). Opening another event stream therefore does not necessarily mean opening another TCP connection. It still consumes resources at the browser, edge, and application.
+Keeping a response open also has practical resource implications across your network layers. Under HTTP/1.1, each long-running SSE stream occupies an entire TCP connection, quickly exhausting the browser's per-origin limit (historically six concurrent connections). Under HTTP/2 and HTTP/3, [multiplexing](https://www.rfc-editor.org/rfc/rfc9113.html#section-5) allows multiple concurrent data streams to share a single transport connection. While multiplexing eliminates connection exhaustion at the socket layer, long-lived streams still hold open memory buffers, file descriptors, and worker contexts in reverse proxies and application servers.
 
 ## From a filter to a live view
 
@@ -152,29 +152,32 @@ EventSource remembers event IDs and can send `Last-Event-ID` when reconnecting. 
 
 For this small dashboard, full snapshots are a reasonable starting point. The example sends complete selections, although its scripted sequence restarts on each request. A real endpoint would start each connection with the current matching jobs and send updated selections as they change. The screen needs an accurate current view; preserving every transition is a different requirement.
 
-## A different request, the same streaming response
+## Streaming infrastructure: middleboxes and buffering
 
-The response streams in the same way as it would after a GET request: the server sends the SSE text format over HTTP, and the infrastructure forwards it as it arrives. What changes is the request that starts it. QUERY lets us send the filter in its body; it does not introduce a different way of delivering the events.
+From the perspective of your backend server, the SSE wire format is unchanged: the application writes `text/event-stream` chunks over the open socket, and intermediate proxies forward them downstream. `QUERY` simply initiated the conversation with a JSON payload instead of URL query parameters.
 
-The browser client does change. Native EventSource cannot initiate QUERY, so a Fetch-based client needs to provide the event parsing and reconnection behavior that EventSource normally supplies. The existing server-side streaming machinery can still be used.
+However, your intermediate infrastructure must treat this route with the same streaming care as a conventional `GET` event stream:
 
-The small caveat is that both capabilities must apply to the same route. A working GET event stream elsewhere does not guarantee that the QUERY route uses the same buffering and timeout settings. NGINX's [response buffering](https://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_buffering), for example, can be configured per location. Once the request reaches the application and the response can flow back as events arrive, the existing streaming machinery is enough. These are the usual SSE deployment concerns, not a new set of requirements invented by QUERY.
+- **Proxy buffering:** Reverse proxies like NGINX buffer upstream responses by default to optimize throughput. For SSE, buffering is catastrophic—it delays event delivery until the buffer fills or the connection closes. You must ensure [`proxy_buffering off`](https://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_buffering) (or the `X-Accel-Buffering: no` response header) is explicitly enabled for your `QUERY` route.
+- **Timeouts and heartbeats:** Edge proxies, cloud load balancers, and API gateways enforce idle client and upstream read timeouts. A quiet stream with no job events will eventually be severed unless the server periodically emits SSE comments (e.g. `: keepalive\n\n`) as heartbeats.
+
+A working `GET` event stream elsewhere in your application does not guarantee that a new `QUERY` route inherits the same location-level proxy configuration. Verifying that events flush immediately through your staging gateway is essential before deploying to production.
 
 ## Would keeping EventSource be simpler?
 
-Quite possibly. If the filter fits comfortably in a URL, native EventSource avoids writing much of the connection-management code. Its automatic reconnection is useful, although replay still requires server support.
+Quite possibly. If the filter fits comfortably in a URL, native EventSource avoids writing connection-management and stream-parsing code entirely. Its automatic reconnection is convenient, provided your server supports replay via `Last-Event-ID`.
 
-For larger filters, an API could accept a POST that creates a saved query or subscription, then return a URL that EventSource opens with GET. That is a different design: the saved resource needs authorization, a lifetime, and perhaps deletion. It may be a good trade if browser convenience is more valuable than keeping everything in one request. The GET URL itself need not contain the original sensitive filter, but it still needs access controls.
+For larger or sensitive filters, an alternative architecture is a two-step handshake: the client sends a `POST` request to create a saved query or subscription resource, and the server returns a temporary URL that native `EventSource` opens with `GET`. This preserves browser convenience, but introduces stateful server resources that require lifecycle management, storage, authorization, and cleanup.
 
-Fetch plus QUERY is attractive when the input belongs in a body and the client already owns its stream lifecycle. It offers control over method, headers, cancellation, and reconnection. That control comes with work; a streaming parser is only one part of the client.
+`Fetch` combined with `QUERY` is attractive when you want a single, direct, self-contained read: the input belongs in the request body, no server-side subscription state needs to be managed, and the client retains full control over HTTP headers, authentication tokens, and stream cancellation.
 
-### Why SSE in 2026, when we have WebSockets?
+## Why SSE in 2026, when we have WebSockets?
 
-For this job dashboard, the browser sends a filter and then mostly listens. SSE fits that shape: updates arrive in an ordinary HTTP response, while occasional actions can remain ordinary API requests. Notifications, job progress, and live dashboards often have the same pattern. There is no need to design a two-way messaging protocol just to keep a list current, although proxy buffering and timeouts still need attention.
+For a dashboard like our background jobs monitor, the client sends a filter once and then mostly listens. SSE matches that unidirectional shape naturally: updates arrive as an ordinary HTTP response, while occasional user actions (like canceling a job) remain standard API calls. Notifications, build status, and live feeds follow this exact pattern.
 
-Native EventSource also supplies parsing and automatic reconnection. Our Fetch-based QUERY version gives up that convenience, so it would be misleading to claim automatic reconnection as a benefit of this particular implementation. Event IDs help with resuming; they are not required merely to reconnect.
+[WebSockets](https://websockets.spec.whatwg.org/) are the right tool when communication is genuinely bidirectional, messages travel frequently in both directions, or subscriptions must be modified dynamically over the same persistent TCP channel without reconnecting. They also support binary framing.
 
-[WebSockets](https://websockets.spec.whatwg.org/) are a better fit when messages travel frequently in both directions, subscriptions change over the same channel, or binary messages are useful. SSE carries text events from server to client; changing our filter here means another request. Neither choice removes the need to define replay, authorization, or slow-consumer behavior. The reason to choose SSE in 2026 is still practical: sometimes a request followed by a stream of updates is all the application needs.
+However, WebSockets operate outside the standard HTTP request-response pipeline. They require separate connection management, custom authentication handshakes, and specialized load balancer configurations. SSE remains compelling in 2026 because it is simply HTTP: it works cleanly with standard authorization headers, leverages existing HTTP/2 multiplexing, traverses corporate proxies effortlessly, and requires no custom protocol layer when all you need is a live stream of server updates.
 
 ## What have we gained?
 

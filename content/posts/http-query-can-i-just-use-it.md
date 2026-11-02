@@ -25,7 +25,7 @@ Could we send the JSON filter with `GET`? Browser Fetch does not allow that. Eve
 
 This is where `QUERY` becomes interesting. Standardized in June 2026 as [RFC 10008](https://www.rfc-editor.org/rfc/rfc10008.html), a Proposed Standard, it gives us a safe, idempotent operation whose input belongs in the request body. We can keep the JSON filter and tell the rest of the system what kind of request this is. It shares those properties with `GET`, while defining its own body-based query semantics.
 
-Even browsing the API documentation gets a little nicer. Searches, reports, and updates no longer all have to appear as `POST` operations. I would call that clearer HTTP semantics rather than automatically “more RESTful”: REST describes more than the choice of method, and our `POST` search was valid all along.
+This makes the API's contract visible at a glance. Searches, batch lookups, and analytical reports no longer have to disguise themselves as `POST` operations alongside resource creations and mutations. This isn't about being pedantically “RESTful” (REST encompasses far more than verb choices, and our `POST` search was technically valid all along), but about clearer HTTP semantics that intermediate tools and human callers can understand immediately.
 
 In practical terms, `QUERY` gives us a few useful things:
 
@@ -54,13 +54,13 @@ fetch('/products/search', {
 });
 ```
 
-That is the idea, rather than a complete client implementation. Changing the filter changes the selection without changing the URL. The server interprets it and returns the matching products, just as our `POST` search did.
+That is the idea, rather than a complete client implementation: the URL identifies the resource or search endpoint, while the payload in the body refines the selection. The server evaluates the filter and returns the matching products, just as our `POST` search did.
 
-`QUERY` is not tied to JSON. `Content-Type` identifies the body's format; the API defines what fields such as `category` and `maxPrice` mean.
+Notice that `fetch()` doesn't need a dedicated helper or new API method; standard `fetch` has always accepted custom method strings. The uppercase spelling is essential, however: HTTP method names are case-sensitive by specification, and `query` is not `QUERY`. While Fetch normalizes a few standard methods like `GET` and `POST`, novel methods are sent exactly as written.
 
-Fetch already accepts method names beyond the familiar ones, so it does not need a new `fetch.query()` function. The uppercase spelling is deliberate: HTTP method names are case-sensitive, and `query` is not `QUERY`. Fetch normalizes some familiar names, but that behavior should not be assumed here.
+Furthermore, `QUERY` is not coupled to JSON. The `Content-Type` header identifies the body format—whether that is JSON, XML, or a domain-specific query language—while the server endpoint defines what fields like `category` and `maxPrice` actually mean.
 
-Sending the request is the easy part. Whether the rest of the system understands it is the more interesting question.
+Sending the request from a browser is the easy part. Whether the rest of the infrastructure along the network path understands it is the more interesting question.
 
 ## The interesting part: the answer goes missing
 
@@ -89,7 +89,7 @@ sequenceDiagram
     end
 ```
 
-And asking again is still another read. A book's price may have changed, the query may execute twice, and there may be two access-log entries. _Safe and idempotent does not mean identical answers, zero incidental effects, or exactly-once execution_. We are talking about repeating a whole HTTP request, not TCP retransmitting bytes within a connection.
+And asking again is still another read. A book's price may have changed in the catalogue, the database query will execute a second time, and the access log will record two requests. _Safe and idempotent does not mean identical answers, zero incidental effects, or exactly-once execution_. We are issuing a complete, new HTTP exchange to recover from a lost message at the application layer, not quietly repairing dropped packets under the hood.
 
 ## My example works. What have I actually verified?
 
@@ -135,17 +135,21 @@ Once the request reaches the application server, the runtime parser still has to
 
 Changing `POST` to `QUERY` may also affect your security rules. For example, a gateway configured to allow `POST /products/search` might reject the same request sent with `QUERY`. Those rules should be updated while keeping the existing login and permission checks: a request that only reads data can still expose private information.
 
-Retry behavior also depends on which component is responsible for it. Is it the client library? The proxy? A deliberately interrupted connection can reveal what actually happens. Can that component replay the body, and does it stop after a sensible number of attempts? A small catalogue search is cheap. A report that takes a minute is a different proposition, even if repeating it is perfectly valid. Repeated attempts can multiply that cost, so retries need a limit. Another attempt will not repair an invalid filter, either. The handler must also remain a read: quietly adding “and reserve the stock” would break the promise we are making.
+Retry behavior also introduces practical boundaries. In practice, you need to know which component is actually responsible for retrying: is it the frontend client library, an SDK, or an intermediate proxy? Because `QUERY` carries a payload, whatever component attempts the retry must buffer and replay the entire request body. Deliberately interrupting connections during testing will quickly reveal whether your client or proxy actually replays that payload as intended.
+
+Even when replaying works, retry policies demand operational caution. A small catalogue search is cheap to run again. A complex analytical report that takes thirty seconds to compute is a very different proposition—repeating it three times under high load can easily cascade into a denial-of-service against your own database. Idempotency grants permission to repeat; operational sanity requires strict retry budgets, backoff intervals, and sensible timeouts.
+
+Finally, remember the contract boundaries. Automatic retries only make sense for transient network failures or dropped connections; another attempt will never repair a 400 Bad Request caused by a malformed filter. And the server handler must uphold its side of the bargain: quietly introducing side effects (like “search for items and immediately reserve them in inventory”) violates the safety contract that clients and proxies rely upon when retrying.
 
 ## And caching? The body changes the question
 
 Two calls to `/products/search` can ask for completely different products. If a cache only looks at the URL, our book search might receive the game results.
 
-That is why QUERY's [caching rules](https://www.rfc-editor.org/rfc/rfc10008.html#section-2.7) require the key to incorporate the request body and related metadata. Responses are cacheable, but a CDN that forwards QUERY does not necessarily know how to cache it correctly.
+That is why QUERY's [caching rules](https://www.rfc-editor.org/rfc/rfc10008.html#section-2.7) require the cache key to incorporate the request body and related metadata. Responses are cacheable by specification, but a CDN that forwards `QUERY` does not automatically know how to cache it correctly.
 
-I would start with caching disabled (`Cache-Control: no-store`) until there is a reason to enable it. Then I would try different filters and different callers, change the underlying products, and inspect actual cache hits. If the catalogue belongs to a tenant, checking that one tenant cannot receive another's results is part of that work. Freshness and authorization do not disappear because we changed the method.
+Historically, `POST` was not categorically uncacheable (HTTP specifications technically permit caching `POST` responses under specific conditions), but in the real world almost no CDN or reverse proxy caches them safely. `QUERY` finally provides a standardized, body-aware caching contract, but that support must be explicitly implemented and configured.
 
-Nor was `POST` categorically uncacheable: HTTP allows its responses to be reused for subsequent `GET` or `HEAD` requests under specific conditions. `QUERY` gives this kind of read a clearer contract; it does not magically switch caching on across the stack.
+Until you have verified that your caching layer understands this contract, the safest starting point is to disable caching (`Cache-Control: no-store`). When you are ready to enable it, verify that cache keys correctly incorporate the full request body and headers. If your catalogue is multi-tenant, ensure one tenant's query never serves cached results to another. Changing the HTTP method introduces a clearer contract, but freshness, tenant isolation, and authorization rules remain your responsibility.
 
 ## How this shows up in actual tools
 
@@ -157,9 +161,9 @@ NGINX's [`limit_except` directive](https://nginx.org/en/docs/http/ngx_http_core_
 
 On the documentation side, [OpenAPI 3.2.1 has a native `query` operation](https://spec.openapis.org/oas/v3.2.1.html#path-item-object). That gets us closer to the readable API description I wanted at the beginning. But I would still generate the SDK and call the endpoint with it. The description format, documentation renderer, and client generator are separate pieces of software. The API console and test runner deserve the same check: a missing dropdown option and an incapable transport are different problems.
 
-The request should also be visible in the dashboards. Did it appear as `QUERY`, disappear from a method-based chart, or end up under an “other” category? That is easier to establish with a handful of known requests than after a rollout.
+Observability needs the same scrutiny. In your metrics dashboards, does `QUERY` register cleanly, or does it disappear into an unclassified "Other" bucket? Verifying this with a few synthetic requests upfront avoids surprises during post-deployment monitoring.
 
-One last practical detail: moving the filter out of the URL reduces its exposure in URL-oriented logs, but the body is not a secret compartment. Middleware, application code, and diagnostics can log it too. Sensitive fields still need redaction, and retained logs need an access policy.
+Similarly, consider logging and audit trails. Moving complex query parameters out of the URL prevents sensitive filter criteria from leaking into web server access logs, browser history, or referrer headers. But the request body is not an encrypted vault: application middleware, tracing agents, and debug loggers often capture request bodies indiscriminately. Sensitive query fields still require explicit redaction, and retained logs still require proper access policies.
 
 ## So, can I ship it?
 
