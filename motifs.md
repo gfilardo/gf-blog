@@ -52,7 +52,7 @@ On article listing pages ([design.md: Section 2](design.md#2-layout-philosophy-t
 
 ## 3. Mathematical Families & Initial Algorithms
 
-To ensure variety across the publication without sacrificing visual coherence, the generator supports distinct mathematical families. The three launch algorithms are preserved unchanged. Three additional families are registered in the `2026-11-03` epoch:
+To ensure variety across the publication without sacrificing visual coherence, the generator supports distinct mathematical families. The three launch algorithms are preserved unchanged. Three additional families are registered in the `2026-10-03` epoch:
 
 ### Algorithm 1: Truchet Tile Circuits (`truchet`)
 * **Mathematical Basis**: A rectangular grid ($M \times N$) populated with quarter-circle arcs and linear crossing tracks. Each tile's rotation ($0^\circ, 90^\circ, 180^\circ, 270^\circ$) is driven by hash bits. Adjacent paths connect seamlessly across tile boundaries to form continuous circuits.
@@ -84,13 +84,13 @@ To ensure variety across the publication without sacrificing visual coherence, t
 
 ---
 
-### Additional Families (2026-11-03)
+### Additional Families (2026-10-03)
 
 - **Supershapes (`supershape`)**: Samples the polar Gielis superformula with seeded symmetry and positive exponents. The sampled radii are normalized to fit the canvas. A compact mark shows one outline; the hero repeats the same outline across three drafting rings with the central outline accented. Reference: [Gielis, 2003, *A generic geometric transformation that unifies a wide range of natural and abstract shapes*](https://doi.org/10.3732/ajb.90.3.333).
 - **Elementary cellular automata (`automata`)**: Selects rule 30, 90, 110, or 150 and evolves a seeded short run of live cells through 8–11 generations, using the three-cell binary neighborhood as the rule-bit index. A sufficient zero-valued halo keeps the displayed evolution independent of finite boundaries. The evolution is mirrored vertically into a woven seal. Only exposed cell edges are drawn, producing continuous stepped contours with no internal cell grid. The hero shows three growth stages with the complete central seal accented; the compact mark reproduces that same seal. Seeded initial cells, rule, generation count, and horizontal reflection define its identity. Reference: [Wolfram CellularAutomaton documentation](https://reference.wolfram.com/language/ref/CellularAutomaton).
 - **Flow fields (`flow-field`)**: Traces streamlines through a smooth vector field combining a broad current, sinusoidal drift, and 2–4 seeded vortices. Seeded vortex locations, radii, strengths, and directions change the composition. Midpoint integration follows tight bends; a spatial hash separates neighboring curves, and loop checks stop self-intersections. The compact mark samples the central field while the hero extends it horizontally. One central streamline is accented. Gentle stretches are simplified and joined with quadratic Bézier segments. Output consists entirely of bounded SVG paths with no noise library or browser animation. Reference: [Tyler Hobbs, *Flow Fields*](https://www.tylerxhobbs.com/words/flow-fields).
 
-All are zero-dependency SVG generators with one accent stroke, CSS color tokens, and non-scaling drafting strokes. Historical publication dates before `2026-11-03` still select only from the original three algorithms. Explicit overrides can use any registered family on any publication date. Every family appears automatically in the `/motifs/` algorithm selector.
+All are zero-dependency SVG generators with one accent stroke, CSS color tokens, and non-scaling drafting strokes. Historical publication dates before `2026-10-03` still select only from the original three algorithms. Explicit overrides can use any registered family on any publication date. Every family appears automatically in the `/motifs/` algorithm selector.
 
 ---
 
@@ -138,9 +138,9 @@ const ALGORITHMS = [
   { id: 'subdivision', since: '2026-01-01', draw: renderSubdivision },
 
   // Epoch 2
-  { id: 'supershape',  since: '2026-11-03', draw: renderSupershape },
-  { id: 'automata',    since: '2026-11-03', draw: renderAutomata },
-  { id: 'flow-field',  since: '2026-11-03', draw: renderFlowField },
+  { id: 'supershape',  since: '2026-10-03', draw: renderSupershape },
+  { id: 'automata',    since: '2026-10-03', draw: renderAutomata },
+  { id: 'flow-field',  since: '2026-10-03', draw: renderFlowField },
 ];
 ```
 

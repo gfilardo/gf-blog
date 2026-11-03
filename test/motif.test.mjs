@@ -236,19 +236,26 @@ test('original algorithms retain byte-identical hero and mark geometry', () => {
 });
 
 test('new epoch preserves historical selection and makes every new algorithm reachable', () => {
-  const before = new Set();
-  const after = new Set();
-  for (let i = 0; i < 100; i++) {
-    const doc = { slug: `epoch-${i}`, date: '2026-11-02' };
-    const old = resolveMotifParameters(doc, ALGORITHMS.slice(0, 3));
-    assert.equal(resolveMotifParameters(doc).algorithm.id, old.algorithm.id);
-    before.add(old.algorithm.id);
-    after.add(resolveMotifParameters({ ...doc, date: '2026-11-03' }).algorithm.id);
+  const epochs = [...new Set(ALGORITHMS.map(a => a.since))];
+  assert.ok(epochs.length >= 2, 'registry includes a later algorithm epoch');
+  for (const since of epochs.slice(1)) {
+    const previousDate = new Date(Date.parse(`${since}T00:00:00Z`) - 86400000).toISOString().slice(0, 10);
+    const previousAlgorithms = ALGORITHMS.filter(a => a.since < since);
+    const availableAlgorithms = ALGORITHMS.filter(a => a.since <= since);
+    const before = new Set();
+    const after = new Set();
+    for (let i = 0; i < 100; i++) {
+      const doc = { slug: `epoch-${i}`, date: previousDate };
+      const old = resolveMotifParameters(doc, previousAlgorithms);
+      assert.equal(resolveMotifParameters(doc).algorithm.id, old.algorithm.id);
+      before.add(old.algorithm.id);
+      after.add(resolveMotifParameters({ ...doc, date: since }).algorithm.id);
+    }
+    assert.deepEqual(before, new Set(previousAlgorithms.map(a => a.id)));
+    assert.deepEqual(after, new Set(availableAlgorithms.map(a => a.id)));
   }
-  assert.equal(before.size, 3);
-  assert.equal(after.size, 6);
-  for (const { id } of ALGORITHMS.slice(3)) {
-    const doc = { slug: 'old-post', date: '2026-10-23', motif: { algorithm: id, seed: 0 } };
+  for (const { id } of ALGORITHMS.filter(a => a.since > epochs[0])) {
+    const doc = { slug: 'old-post', date: epochs[0], motif: { algorithm: id, seed: 0 } };
     assert.equal(resolveMotifParameters(doc).algorithm.id, id);
     assert.ok(generateArticleMotif(doc).includes('var(--accent)'));
   }
