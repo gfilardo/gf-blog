@@ -10,6 +10,8 @@ import { renderSupershape } from './motif/supershape.mjs';
 export { renderSupershape };
 import { renderAutomata } from './motif/automata.mjs';
 export { renderAutomata };
+import { renderFlowField } from './motif/flow-field.mjs';
+export { renderFlowField };
 
 // Immutable registry of dated algorithm epochs
 export const ALGORITHMS = [
@@ -18,8 +20,9 @@ export const ALGORITHMS = [
   { id: 'guilloche', since: '2026-01-01', draw: renderGuilloche },
   { id: 'subdivision', since: '2026-01-01', draw: renderSubdivision },
   // Epoch 2: append only; articles before this date retain their original selection.
-  { id: 'supershape', since: '2026-11-03', draw: renderSupershape },
-  { id: 'automata', since: '2026-11-03', draw: renderAutomata },
+  { id: 'supershape', since: '2026-10-03', draw: renderSupershape },
+  { id: 'automata', since: '2026-10-03', draw: renderAutomata },
+  { id: 'flow-field', since: '2026-10-03', draw: renderFlowField },
 ];
 
 /**

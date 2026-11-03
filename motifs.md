@@ -52,7 +52,7 @@ On article listing pages ([design.md: Section 2](design.md#2-layout-philosophy-t
 
 ## 3. Mathematical Families & Initial Algorithms
 
-To ensure variety across the publication without sacrificing visual coherence, the generator supports distinct mathematical families. The three launch algorithms are preserved unchanged. Two additional families are registered in the `2026-11-03` epoch:
+To ensure variety across the publication without sacrificing visual coherence, the generator supports distinct mathematical families. The three launch algorithms are preserved unchanged. Three additional families are registered in the `2026-11-03` epoch:
 
 ### Algorithm 1: Truchet Tile Circuits (`truchet`)
 * **Mathematical Basis**: A rectangular grid ($M \times N$) populated with quarter-circle arcs and linear crossing tracks. Each tile's rotation ($0^\circ, 90^\circ, 180^\circ, 270^\circ$) is driven by hash bits. Adjacent paths connect seamlessly across tile boundaries to form continuous circuits.
@@ -88,6 +88,7 @@ To ensure variety across the publication without sacrificing visual coherence, t
 
 - **Supershapes (`supershape`)**: Samples the polar Gielis superformula with seeded symmetry and positive exponents. The sampled radii are normalized to fit the canvas. A compact mark shows one outline; the hero repeats the same outline across three drafting rings with the central outline accented. Reference: [Gielis, 2003, *A generic geometric transformation that unifies a wide range of natural and abstract shapes*](https://doi.org/10.3732/ajb.90.3.333).
 - **Elementary cellular automata (`automata`)**: Selects rule 30, 90, 110, or 150 and evolves a seeded short run of live cells through 8–11 generations, using the three-cell binary neighborhood as the rule-bit index. A sufficient zero-valued halo keeps the displayed evolution independent of finite boundaries. The evolution is mirrored vertically into a woven seal. Only exposed cell edges are drawn, producing continuous stepped contours with no internal cell grid. The hero shows three growth stages with the complete central seal accented; the compact mark reproduces that same seal. Seeded initial cells, rule, generation count, and horizontal reflection define its identity. Reference: [Wolfram CellularAutomaton documentation](https://reference.wolfram.com/language/ref/CellularAutomaton).
+- **Flow fields (`flow-field`)**: Traces streamlines through a smooth vector field combining a broad current, sinusoidal drift, and 2–4 seeded vortices. Seeded vortex locations, radii, strengths, and directions change the composition. Midpoint integration follows tight bends; a spatial hash separates neighboring curves, and loop checks stop self-intersections. The compact mark samples the central field while the hero extends it horizontally. One central streamline is accented. Gentle stretches are simplified and joined with quadratic Bézier segments. Output consists entirely of bounded SVG paths with no noise library or browser animation. Reference: [Tyler Hobbs, *Flow Fields*](https://www.tylerxhobbs.com/words/flow-fields).
 
 All are zero-dependency SVG generators with one accent stroke, CSS color tokens, and non-scaling drafting strokes. Historical publication dates before `2026-11-03` still select only from the original three algorithms. Explicit overrides can use any registered family on any publication date. Every family appears automatically in the `/motifs/` algorithm selector.
 
@@ -139,6 +140,7 @@ const ALGORITHMS = [
   // Epoch 2
   { id: 'supershape',  since: '2026-11-03', draw: renderSupershape },
   { id: 'automata',    since: '2026-11-03', draw: renderAutomata },
+  { id: 'flow-field',  since: '2026-11-03', draw: renderFlowField },
 ];
 ```
 
@@ -184,6 +186,7 @@ Supported YAML frontmatter:
 - `static/js/motif/subdivision.mjs`
 - `static/js/motif/supershape.mjs`
 - `static/js/motif/automata.mjs`
+- `static/js/motif/flow-field.mjs`
 
 Shared hashing, PRNG, numeric formatting, and selection helpers live in `static/js/motif/utils.mjs`. Algorithms import helpers directly, avoiding circular dependencies on the registry. The build copies the complete module tree for the browser widget; server and browser use identical implementations. Existing named exports remain supported.
 
@@ -276,3 +279,12 @@ To audit visual diversity and allow transparent inspection of the generative eng
 - **Autonomous Web Component (`<motif-widget>`)**: Each entry is instantiated as a custom element with zero-framework client-side ESM (`static/js/motif-widget.js`).
 - **Interactive Exploration**: Dropdowns allow readers and authors to swap algorithms and seeds in real time. The widget dynamically re-evaluates `generateArticleMotif()` in the browser DOM across all three display tiers (**Hero Frieze**, **Compact Mark**, and **List Mark**).
 - **Frontmatter Serialization**: Authors experimenting with alternative motifs can click **"Copy YAML"** to copy the exact frontmatter override (`motif: { algorithm: ..., seed: ... }`) directly to their clipboard.
+
+
+To choose a flow-field motif explicitly:
+
+```yaml
+motif:
+  algorithm: flow-field
+  seed: 42
+```

@@ -15,12 +15,13 @@ import {
   renderTruchet,
   renderGuilloche,
   renderSubdivision,
-  renderAutomata
+  renderAutomata,
+  renderFlowField
 } from '../src/motif.mjs';
 
 test('registry maintains monotonic since dates, unique IDs, and valid draw functions', () => {
   assertRegistryInvariants();
-  assert.deepEqual(ALGORITHMS.map(a => a.id), ['truchet', 'guilloche', 'subdivision', 'supershape', 'automata']);
+  assert.deepEqual(ALGORITHMS.map(a => a.id), ['truchet', 'guilloche', 'subdivision', 'supershape', 'automata', 'flow-field']);
   assert.equal(isKnownAlgorithm('truchet'), true);
   assert.equal(isKnownAlgorithm('guilloche'), true);
   assert.equal(isKnownAlgorithm('subdivision'), true);
@@ -245,7 +246,7 @@ test('new epoch preserves historical selection and makes every new algorithm rea
     after.add(resolveMotifParameters({ ...doc, date: '2026-11-03' }).algorithm.id);
   }
   assert.equal(before.size, 3);
-  assert.equal(after.size, 5);
+  assert.equal(after.size, 6);
   for (const { id } of ALGORITHMS.slice(3)) {
     const doc = { slug: 'old-post', date: '2026-10-23', motif: { algorithm: id, seed: 0 } };
     assert.equal(resolveMotifParameters(doc).algorithm.id, id);
@@ -310,6 +311,30 @@ test('automata seals keep their topology across forms and have mirrored, unique 
     const maxY = Math.max(...mark.flatMap(([, y1, , y2]) => [y1, y2]));
     for (const [x1, y1, x2, y2] of mark) {
       assert.ok(edges.has(key([x1, maxY - y1, x2, maxY - y2])), 'seal is mirrored about its equator');
+    }
+  }
+});
+
+test('flow fields stay substantial and bounded across seeds, including Bézier controls', () => {
+  const parser = new XMLParser({ ignoreAttributes: false, attributeNamePrefix: '' });
+  for (const bounds of [
+    { width: 360, height: 80, form: 'hero' },
+    { width: 120, height: 120, form: 'mark' }
+  ]) {
+    for (let seed = 0; seed < 64; seed++) {
+      const geometry = renderFlowField(seed, bounds);
+      const paths = parser.parse(`<svg>${geometry}</svg>`).svg.path;
+      assert.ok(paths.length >= 4, `seed ${seed} fills the canvas with several streamlines`);
+      assert.ok(geometry.length < 35000, 'SVG output stays compact');
+      for (const path of paths) {
+        assert.match(path.d, /Q/, 'streamlines use smooth quadratic curves');
+        const points = [...path.d.matchAll(/(-?[\d.]+),(-?[\d.]+)/g)].map(m => m.slice(1).map(Number));
+        assert.ok(points.length >= 5);
+        for (const [x, y] of points) {
+          assert.ok(x >= 0 && x <= bounds.width && y >= 0 && y <= bounds.height,
+            'endpoints and control points stay inside the canvas');
+        }
+      }
     }
   }
 });
