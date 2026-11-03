@@ -52,7 +52,7 @@ On article listing pages ([design.md: Section 2](design.md#2-layout-philosophy-t
 
 ## 3. Mathematical Families & Initial Algorithms
 
-To ensure variety across the publication without sacrificing visual coherence, the generator supports distinct mathematical families. The three launch algorithm IDs and activation dates are preserved. Three additional families are registered in the `2026-10-03` epoch:
+To ensure variety across the publication without sacrificing visual coherence, the generator supports distinct mathematical families. The three launch algorithm IDs and activation dates are preserved. Four additional families are registered in the `2026-10-03` epoch:
 
 ### Algorithm 1: Truchet Tile Circuits (`truchet`)
 * **Mathematical Basis**: Smith's two orientations of a tile containing two quarter-circles centered at opposite corners. Endpoints meet at edge midpoints with matching tangents. There are no crossing tiles or decorative node dots.
@@ -92,6 +92,16 @@ To ensure variety across the publication without sacrificing visual coherence, t
 - **Flow fields (`flow-field`)**: Traces streamlines through a smooth vector field combining a broad current, sinusoidal drift, and 2–4 seeded vortices. Seeded vortex locations, radii, strengths, and directions change the composition. Midpoint integration follows tight bends; a spatial hash separates neighboring curves, and loop checks stop self-intersections. The compact mark samples the central field while the hero extends it horizontally. One central streamline is accented. Gentle stretches are simplified and joined with quadratic Bézier segments. Output consists entirely of bounded SVG paths with no noise library or browser animation. Reference: [Tyler Hobbs, *Flow Fields*](https://www.tylerxhobbs.com/words/flow-fields).
 
 All are zero-dependency SVG generators with one accent stroke, CSS color tokens, and non-scaling drafting strokes. Historical publication dates before `2026-10-03` still select only from the original three algorithms. Explicit overrides can use any registered family on any publication date. Every family appears automatically in the `/motifs/` algorithm selector.
+
+---
+
+### Switchyard (2026-10-03)
+
+**Switchyard (`switchyard`)** modified version of the truchet algorithm with a mix of curved connectors, straight crossings, asymmetric inward/outward bends, decorative tile-center dots, and dashed centerline. Unlike classic Smith tiles, tangent continuity and coloring an entire connected route are not constraints of this design.
+
+The wide banner shows a $15 \times 3$ field; the compact mark reproduces its central $3 \times 3$ tiles. Each tile's type, orientation, and dot are derived from its seed and integer coordinates, independently of canvas size. A seeded focal tile always lies within the central crop, keeping its accent segment and dot visible at both sizes. Dot radii scale with tile size; drafting strokes retain the shared non-scaling weight.
+
+Switchyard shares the `2026-10-03` epoch with supershapes, automata, and flow fields. Select it on any article with `motif: switchyard`, or choose it in `/motifs/`.
 
 ---
 
@@ -142,6 +152,8 @@ const ALGORITHMS = [
   { id: 'supershape',  since: '2026-10-03', draw: renderSupershape },
   { id: 'automata',    since: '2026-10-03', draw: renderAutomata },
   { id: 'flow-field',  since: '2026-10-03', draw: renderFlowField },
+
+  { id: 'switchyard', since: '2026-10-03', draw: renderSwitchyard },
 ];
 ```
 
@@ -188,6 +200,7 @@ Supported YAML frontmatter:
 - `static/js/motif/supershape.mjs`
 - `static/js/motif/automata.mjs`
 - `static/js/motif/flow-field.mjs`
+- `static/js/motif/switchyard.mjs`
 
 Shared hashing, PRNG, numeric formatting, and selection helpers live in `static/js/motif/utils.mjs`. Algorithms import helpers directly, avoiding circular dependencies on the registry. The build copies the complete module tree for the browser widget; server and browser use identical implementations. Existing named exports remain supported.
 

@@ -12,6 +12,8 @@ import { renderAutomata } from './motif/automata.mjs';
 export { renderAutomata };
 import { renderFlowField } from './motif/flow-field.mjs';
 export { renderFlowField };
+import { renderSwitchyard } from './motif/switchyard.mjs';
+export { renderSwitchyard };
 
 // Immutable registry of dated algorithm epochs
 export const ALGORITHMS = [
@@ -23,6 +25,7 @@ export const ALGORITHMS = [
   { id: 'supershape', since: '2026-10-03', draw: renderSupershape },
   { id: 'automata', since: '2026-10-03', draw: renderAutomata },
   { id: 'flow-field', since: '2026-10-03', draw: renderFlowField },
+  { id: 'switchyard', since: '2026-10-03', draw: renderSwitchyard },
 ];
 
 /**
