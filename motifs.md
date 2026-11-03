@@ -52,15 +52,16 @@ On article listing pages ([design.md: Section 2](design.md#2-layout-philosophy-t
 
 ## 3. Mathematical Families & Initial Algorithms
 
-To ensure variety across the publication without sacrificing visual coherence, the generator supports distinct mathematical families. The three launch algorithms are preserved unchanged. Three additional families are registered in the `2026-10-03` epoch:
+To ensure variety across the publication without sacrificing visual coherence, the generator supports distinct mathematical families. The three launch algorithm IDs and activation dates are preserved. Three additional families are registered in the `2026-10-03` epoch:
 
 ### Algorithm 1: Truchet Tile Circuits (`truchet`)
-* **Mathematical Basis**: A rectangular grid ($M \times N$) populated with quarter-circle arcs and linear crossing tracks. Each tile's rotation ($0^\circ, 90^\circ, 180^\circ, 270^\circ$) is driven by hash bits. Adjacent paths connect seamlessly across tile boundaries to form continuous circuits.
-* **Aesthetic**: Integrated circuit traces, pipeline routes, and architectural network flow.
-* **DNA Adaptation**:
-  - `form: 'hero'`: An $9 \times 2$ grid with extended horizontal flow channels, terminal contact pads, and coordinate ticks.
-  - `form: 'mark'`: A $3 \times 3$ concentrated circuit labyrinth with centered loop density.
-* **Focal Accent**: Exactly one continuous trace or terminal junction renders in `stroke="var(--accent)"`.
+* **Mathematical Basis**: Smith's two orientations of a tile containing two quarter-circles centered at opposite corners. Endpoints meet at edge midpoints with matching tangents. There are no crossing tiles or decorative node dots.
+* **Aesthetic**: Continuous meandering routes and closed loops, with subtle corner registration ticks.
+* **DNA Adaptation**: A coordinate hash and PRNG choose each tile independently from `(seed, column, row)`. A canonical $15 \times 3$ field is traced into complete routes before rendering.
+  - `form: 'hero'`: Shows the full $15 \times 3$ field.
+  - `form: 'mark'`: Shows its central $3 \times 3$ tiles, preserving geometry and route colors exactly. Routes may leave and re-enter the crop.
+* **Focal Accent**: A seeded arc in the central tile selects one complete connected route. That route is accented throughout the field; the mark displays its visible portions.
+
 
 ### Algorithm 2: Guilloché & Harmonograph Curves (`guilloche`)
 * **Mathematical Basis**: Coupled parametric harmonic oscillators:

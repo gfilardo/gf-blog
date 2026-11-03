@@ -1,100 +1,129 @@
-import { mulberry32, fmt } from './utils.mjs';
+import { fnv1a, mulberry32, fmt } from './utils.mjs';
 
 /**
- * Family A: Truchet Tile Circuits
- * Grid-based circuit network composed of Smith quarter-circle arcs and crossing tracks.
+ * Smith's two quarter-circle tiles, traced as connected routes.
+ * Each arc joins adjacent edge midpoints around a tile corner; neighboring
+ * tiles consequently meet with matching tangents, without crossings.
+ *
+ * Reference: Christopher Carlson, "Multi-Scale Truchet Patterns" (Bridges 2018).
+ * https://archive.bridgesmathart.org/2018/bridges2018-39.pdf
+ * Uses the basic Smith tiles discussed in the paper, at a single tile scale.
+ *
+ * Both forms sample one 15×3 field; the mark shows its central 3×3 tiles.
  */
 export function renderTruchet(seed, bounds = {}) {
   const width = bounds.width ?? 360;
   const height = bounds.height ?? 80;
   const form = bounds.form ?? (width <= 160 ? 'mark' : 'hero');
+  const compact = form === 'mark';
+  const cols = compact ? 3 : 15;
+  const tile = Math.min(width * 0.94 / cols, height * 0.88 / 3);
+  const edges = [];
+  const adjacent = new Map();
+  const key = p => p.join(',');
+  const equal = (a, b) => key(a) === key(b);
 
-  const rng = mulberry32(seed);
-
-  // Adapts grid to canvas form while preserving visual identity
-  const cols = form === 'mark' ? 3 : 9;
-  const rows = form === 'mark' ? 3 : 2;
-  const tileSize = Math.min(width / cols, height / rows);
-  const offsetX = (width - cols * tileSize) / 2;
-  const offsetY = (height - rows * tileSize) / 2;
-
-  const totalTiles = cols * rows;
-  const focalIndex = Math.floor(rng() * totalTiles);
-
-  let paths = [];
-  let accentPaths = [];
-  let nodes = [];
-
-  // Corner registration ticks in --line
-  const tick = 4;
-  const cornerTicks = `<path d="M${fmt(offsetX)},${fmt(offsetY + tick)} V${fmt(offsetY)} H${fmt(offsetX + tick)} M${fmt(offsetX + cols * tileSize - tick)},${fmt(offsetY)} H${fmt(offsetX + cols * tileSize)} V${fmt(offsetY + tick)} M${fmt(offsetX)},${fmt(offsetY + rows * tileSize - tick)} V${fmt(offsetY + rows * tileSize)} H${fmt(offsetX + tick)} M${fmt(offsetX + cols * tileSize - tick)},${fmt(offsetY + rows * tileSize)} H${fmt(offsetX + cols * tileSize)} V${fmt(offsetY + rows * tileSize - tick)}" stroke="var(--line)" stroke-width="1" vector-effect="non-scaling-stroke" fill="none"/>`;
-
-  for (let r = 0; r < rows; r++) {
-    for (let c = 0; c < cols; c++) {
-      const idx = r * cols + c;
-      const isFocal = idx === focalIndex;
-      const x = offsetX + c * tileSize;
-      const y = offsetY + r * tileSize;
-      const s = tileSize;
-      const hs = s / 2;
-
-      // PRNG-driven tile variety: dual arcs vs crossing track
-      const tileType = rng() < 0.75 ? 'arc' : 'cross';
-      const rotation = Math.floor(rng() * 2); // 0 or 1
-
-      if (tileType === 'cross') {
-        const p1 = `M${fmt(x)},${fmt(y + hs)} H${fmt(x + s)}`;
-        const p2 = `M${fmt(x + hs)},${fmt(y)} V${fmt(y + s)}`;
-        if (isFocal) {
-          accentPaths.push(p1);
-          paths.push(p2);
-        } else {
-          paths.push(`${p1} ${p2}`);
-        }
-      } else if (rotation === 0) {
-        // Arcs: Top-Left and Bottom-Right
-        const a1 = `M${fmt(x)},${fmt(y + hs)} A${fmt(hs)},${fmt(hs)} 0 0,1 ${fmt(x + hs)},${fmt(y)}`;
-        const a2 = `M${fmt(x + hs)},${fmt(y + s)} A${fmt(hs)},${fmt(hs)} 0 0,1 ${fmt(x + s)},${fmt(y + hs)}`;
-        if (isFocal) {
-          accentPaths.push(a1);
-          paths.push(a2);
-        } else {
-          paths.push(`${a1} ${a2}`);
-        }
+  // Integer coordinates use half-tile units; shared edge midpoints therefore
+  // have identical keys without any floating-point comparisons.
+  function add(start, end, sweep, col, row) {
+    const index = edges.length;
+    edges.push({ start, end, sweep, col, row });
+    for (const point of [start, end]) {
+      const id = key(point);
+      if (!adjacent.has(id)) adjacent.set(id, []);
+      adjacent.get(id).push(index);
+    }
+  }
+  for (let row = -1; row <= 1; row++) {
+    for (let col = -7; col <= 7; col++) {
+      const top = [2 * col, 2 * row - 1];
+      const right = [2 * col + 1, 2 * row];
+      const bottom = [2 * col, 2 * row + 1];
+      const left = [2 * col - 1, 2 * row];
+      // Tile identity depends only on seed and location, never traversal order.
+      // Mix the coordinate hash through the PRNG rather than using its lowest
+      // bit directly, which can create regular parity patterns on the grid.
+      const orientation = mulberry32(fnv1a(`${seed >>> 0}:${col}:${row}`))() < 0.5 ? 0 : 1;
+      if (orientation === 0) {
+        // Centers: top-left and bottom-right. SVG sweep 0/1 chooses the
+        // corner-centered quarter-circle, not the alternative interior arc.
+        add(left, top, 0, col, row);
+        add(bottom, right, 1, col, row);
       } else {
-        // Arcs: Top-Right and Bottom-Left
-        const a1 = `M${fmt(x + hs)},${fmt(y)} A${fmt(hs)},${fmt(hs)} 0 0,1 ${fmt(x + s)},${fmt(y + hs)}`;
-        const a2 = `M${fmt(x)},${fmt(y + hs)} A${fmt(hs)},${fmt(hs)} 0 0,0 ${fmt(x + hs)},${fmt(y + s)}`;
-        if (isFocal) {
-          accentPaths.push(a1);
-          paths.push(a2);
-        } else {
-          paths.push(`${a1} ${a2}`);
-        }
-      }
-
-      // Small junction pin node at select edge midpoints
-      if (rng() < 0.25) {
-        nodes.push(`<circle cx="${fmt(x + hs)}" cy="${fmt(y + hs)}" r="1.5" fill="var(--line)"/>`);
+        // Centers: top-right and bottom-left, with the same sweep convention.
+        add(top, right, 0, col, row);
+        add(left, bottom, 1, col, row);
       }
     }
   }
 
-  // Accent junction node on the focal tile
-  const focalCol = focalIndex % cols;
-  const focalRow = Math.floor(focalIndex / cols);
-  const fx = offsetX + focalCol * tileSize + tileSize / 2;
-  const fy = offsetY + focalRow * tileSize + tileSize / 2;
-  nodes.push(`<circle cx="${fmt(fx)}" cy="${fmt(fy)}" r="2" fill="var(--accent)"/>`);
+  const visited = new Set();
+  const routes = [];
+  // Interior midpoints have degree two and perimeter midpoints degree one,
+  // so every component is a non-branching open route or a closed loop.
+  function trace(index, start) {
+    const route = [];
+    let point = start;
+    while (index !== undefined && !visited.has(index)) {
+      visited.add(index);
+      const edge = edges[index];
+      const forward = equal(point, edge.start);
+      const end = forward ? edge.end : edge.start;
+      // Reversing an arc's endpoints also reverses its SVG sweep direction.
+      route.push({ ...edge, start: point, end, sweep: forward ? edge.sweep : 1 - edge.sweep });
+      point = end;
+      index = adjacent.get(key(point)).find(next => !visited.has(next));
+    }
+    routes.push(route);
+  }
+  // Open routes start at the perimeter; the remainder are closed loops.
+  for (const [id, indices] of adjacent) {
+    if (indices.length === 1 && !visited.has(indices[0])) trace(indices[0], id.split(',').map(Number));
+  }
+  for (let index = 0; index < edges.length; index++) {
+    if (!visited.has(index)) trace(index, edges[index].start);
+  }
 
-  const bgGuide = `<line x1="${fmt(offsetX)}" y1="${fmt(offsetY + rows * tileSize / 2)}" x2="${fmt(offsetX + cols * tileSize)}" y2="${fmt(offsetY + rows * tileSize / 2)}" stroke="var(--line)" stroke-dasharray="2 4" stroke-width="1" vector-effect="non-scaling-stroke"/>`;
+  // Select a route through a seeded arc of the central tile. Trace it across
+  // the full field before cropping, so accent membership agrees in both forms.
+  const focalArc = fnv1a(`${seed >>> 0}:focal`) & 1;
+  const focalEdge = edges.filter(edge => edge.col === 0 && edge.row === 0)[focalArc];
+  const focalRoute = routes.find(route => route.some(edge =>
+    equal(edge.start, focalEdge.start) && equal(edge.end, focalEdge.end)
+    || equal(edge.start, focalEdge.end) && equal(edge.end, focalEdge.start)));
+  const point = ([x, y]) => `${fmt(width / 2 + x * tile / 2)},${fmt(height / 2 + y * tile / 2)}`;
+  const radius = fmt(tile / 2);
+  function path(route) {
+    const commands = [];
+    let previous = null;
+    let cropped = false;
+    for (const edge of route) {
+      if (compact && Math.abs(edge.col) > 1) {
+        // A route can leave and re-enter the crop. Restart with M on re-entry
+        // so the renderer never draws a shortcut across the hidden section.
+        previous = null;
+        cropped = true;
+        continue;
+      }
+      if (!previous || !equal(previous, edge.start)) commands.push(`M${point(edge.start)}`);
+      commands.push(`A${radius},${radius} 0 0,${edge.sweep} ${point(edge.end)}`);
+      previous = edge.end;
+    }
+    // Close only complete loops; closing a clipped route would add a chord.
+    if (commands.length && !cropped && equal(route[0].start, route.at(-1).end)) commands.push('Z');
+    return commands.join(' ');
+  }
 
-  return [
-    cornerTicks,
-    bgGuide,
-    `<path d="${paths.join(' ')}" stroke="var(--muted)" stroke-width="1" vector-effect="non-scaling-stroke" fill="none"/>`,
-    accentPaths.length ? `<path d="${accentPaths.join(' ')}" stroke="var(--accent)" stroke-width="1" vector-effect="non-scaling-stroke" fill="none"/>` : '',
-    nodes.join('')
-  ].filter(Boolean).join('');
+  const muted = routes.filter(route => route !== focalRoute).map(path).filter(Boolean).join(' ');
+  const accent = path(focalRoute);
+  const left = (width - cols * tile) / 2;
+  const right = width - left;
+  const top = (height - 3 * tile) / 2;
+  const bottom = height - top;
+  const tick = Math.min(3, tile / 5);
+  const guides = `M${fmt(left)},${fmt(top + tick)}V${fmt(top)}H${fmt(left + tick)} M${fmt(right - tick)},${fmt(top)}H${fmt(right)}V${fmt(top + tick)} M${fmt(left)},${fmt(bottom - tick)}V${fmt(bottom)}H${fmt(left + tick)} M${fmt(right - tick)},${fmt(bottom)}H${fmt(right)}V${fmt(bottom - tick)}`;
+  const weight = 'stroke-width="1" vector-effect="non-scaling-stroke" fill="none"';
+  return `<path d="${guides}" stroke="var(--line)" ${weight}/>`
+    + `<path d="${muted}" stroke="var(--muted)" ${weight}/>`
+    + `<path d="${accent}" stroke="var(--accent)" ${weight}/>`;
 }
-

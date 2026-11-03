@@ -219,14 +219,13 @@ test('render produces /motifs/ recap page including both published articles and 
 });
 
 
-// Captured before extraction: splitting modules must preserve existing article geometry.
-test('original algorithms retain byte-identical hero and mark geometry', () => {
+// Captured before extraction; Truchet now has dedicated geometry regression tests.
+test('unchanged original algorithms retain byte-identical hero and mark geometry', () => {
   const digests = {
-    truchet: '14c7a34d407476e519d949fbbb23c91fecd09eb22860480eaddf246b786df08a',
     guilloche: '4cd3d1ee49fd7dd9eea31b96017e06a7d3bbe81aaf572fbfc9e8cef6fe0893e7',
     subdivision: '8b214c15299c7a8c6ecb31b04fa2350686f72fec3e2fc30c6148260e62d6ea03'
   };
-  for (const { id, draw } of ALGORITHMS.slice(0, 3)) {
+  for (const { id, draw } of ALGORITHMS.filter(a => a.id in digests)) {
     const geometry = [0, 42, 4294967295].flatMap(seed => [
       { width: 360, height: 80, form: 'hero' },
       { width: 120, height: 120, form: 'mark' }
