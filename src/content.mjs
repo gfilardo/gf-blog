@@ -6,6 +6,7 @@ import Ajv from 'ajv';
 import addFormats from 'ajv-formats';
 import MarkdownIt from 'markdown-it';
 import { renderMermaidSVG } from 'beautiful-mermaid';
+import { isKnownAlgorithm } from './motif.mjs';
 import { contentUrl, urls } from './urls.mjs';
 const ajv = new Ajv({ allErrors: true });
 addFormats(ajv);
@@ -57,6 +58,13 @@ export function parseContent(source, raw, kind, site) {
     const data = YAML.parse(match[1], { uniqueKeys: true, maxAliasCount: 0 });
     if (!validators[kind](data)) throw new Error(ajv.errorsText(validators[kind].errors, { separator: '; ' }));
     if (data.updated && (!data.date || data.updated < data.date)) throw new Error('updated requires date and must not precede it');
+    if (data.motif) {
+      const algo = typeof data.motif === 'string' ? data.motif : data.motif.algorithm;
+      if (algo && !isKnownAlgorithm(algo)) throw new Error(`Unknown motif algorithm "${algo}"`);
+    }
+    if (data.series?.motif && !isKnownAlgorithm(data.series.motif)) {
+      throw new Error(`Unknown series motif algorithm "${data.series.motif}"`);
+    }
     const md = new MarkdownIt({ html: false });
     const defaultFence = md.renderer.rules.fence;
     md.renderer.rules.fence = (tokens, index, options, env, self) => {

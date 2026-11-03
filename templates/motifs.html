@@ -1,0 +1,107 @@
+{% extends "layout.html" %}
+{% block content %}
+<header class="page-heading">
+  <a class="back-link" href="{{ home }}">← All articles</a>
+  <p class="eyebrow">Visual Systems</p>
+  <h1>Article Motifs<span class="accent">.</span></h1>
+  <p class="intro">Deterministic geometric identifiers ("computational colophons" / "digital ex-libris") generated from article slugs, site design tokens, and date-based algorithmic epochs. Use the controls on each entry to explore alternative algorithms and seeds.</p>
+</header>
+
+<section class="motifs-ledger" aria-label="Article Motifs">
+  <div class="section-heading">
+    <h2>All Articles & Drafts</h2>
+    <span class="meta">{{ page.motifs.length }} {% if page.motifs.length == 1 %}motif{% else %}motifs{% endif %}</span>
+  </div>
+
+  <div class="motif-cards">
+  {% for item in page.motifs %}
+    <motif-widget
+      class="motif-entry{% if item.draft %} motif-entry-draft{% endif %}"
+      data-slug="{{ item.slug }}"
+      data-date="{{ item.date }}"
+      data-default-algorithm="{{ item.motifMeta.algorithmId }}"
+      data-default-seed="{{ item.motifMeta.seed }}"
+      data-epoch="{{ item.motifMeta.epoch }}"
+    >
+      <div class="motif-entry-header">
+        <div class="motif-meta-line">
+          <time class="meta" datetime="{{ item.date }}">{{ item.date }}</time>
+          {% if item.seriesNav %}<span class="meta">· {{ item.seriesNav.title }} (Part {{ item.series.part }})</span>{% endif %}
+          {% if item.draft %}<span class="motif-draft-tag">Draft preview</span>{% endif %}
+        </div>
+        <h3 class="motif-entry-title"><a href="{{ item.url }}">{{ item.title }}</a></h3>
+        <div class="motif-specs">
+          <label class="motif-control">
+            <span class="control-label">Algorithm</span>
+            <select class="motif-select-algo" aria-label="Select algorithm for {{ item.title }}">
+              {% for algo in page.algorithms %}
+              <option value="{{ algo.id }}"{% if algo.id == item.motifMeta.algorithmId %} selected{% endif %}>{{ algo.id }}</option>
+              {% endfor %}
+            </select>
+          </label>
+          <label class="motif-control">
+            <span class="control-label">Seed</span>
+            <select class="motif-select-seed" aria-label="Select seed for {{ item.title }}">
+              <option value="{{ item.motifMeta.seed }}" selected>{{ item.motifMeta.seed }} (current: {{ item.slug }})</option>
+              <optgroup label="Other article seeds">
+                {% for other in page.motifs %}
+                {% if other.slug != item.slug %}
+                <option value="{{ other.motifMeta.seed }}">{{ other.motifMeta.seed }} ({{ other.slug }})</option>
+                {% endif %}
+                {% endfor %}
+              </optgroup>
+              <optgroup label="Reference seeds">
+                <option value="0">0 (Minimal)</option>
+                <option value="42">42 (Classic)</option>
+                <option value="12345">12345 (Epoch test)</option>
+                <option value="2147483647">2147483647 (Max 31-bit)</option>
+              </optgroup>
+              <option value="custom">Custom value...</option>
+              <option value="random">🎲 Randomize</option>
+            </select>
+          </label>
+          <span class="motif-spec-pill motif-hex-pill">
+            <span class="spec-label">Hex</span>
+            <code class="motif-hex-display">{{ item.motifMeta.seedHex }}</code>
+          </span>
+          <span class="motif-spec-pill">
+            <span class="spec-label">Epoch</span>
+            <code>{{ item.motifMeta.epoch }}</code>
+          </span>
+          {% if item.motifMeta.isOverride %}
+          <span class="motif-spec-pill spec-override">{{ item.motifMeta.overrideSource }} override</span>
+          {% endif %}
+          <button type="button" class="motif-btn-reset" hidden title="Reset to article default">↺ Reset</button>
+          <button type="button" class="motif-btn-copy" title="Copy YAML frontmatter override">Copy YAML</button>
+        </div>
+      </div>
+      <div class="motif-entry-visuals">
+        <div class="motif-frame-wrap motif-hero-wrap">
+          <div class="motif-frame motif-frame-hero">
+            {{ item.heroMotif | safe }}
+          </div>
+          <span class="motif-caption">Hero Frieze (360×80)</span>
+        </div>
+        <div class="motif-frame-wrap motif-mark-wrap">
+          <div class="motif-frame motif-frame-mark">
+            {{ item.markMotif | safe }}
+          </div>
+          <span class="motif-caption">Compact Mark (120×120)</span>
+        </div>
+        <div class="motif-frame-wrap motif-micro-wrap">
+          <div class="motif-frame motif-frame-micro">
+            <div class="article-motif-mark">
+              {{ item.markMotif | safe }}
+            </div>
+          </div>
+          <span class="motif-caption">List Mark (44×44)</span>
+        </div>
+      </div>
+    </motif-widget>
+  {% else %}
+    <p class="empty-state">No articles found.</p>
+  {% endfor %}
+  </div>
+</section>
+<script type="module" src="{{ home }}js/motif-widget.js" defer></script>
+{% endblock %}
