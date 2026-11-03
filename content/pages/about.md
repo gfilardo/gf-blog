@@ -21,7 +21,7 @@ When you build on heavyweight frameworks, you outsource your technical destiny. 
 
 For years, the mainstream argument against this approach was developer velocity: *"You can't reinvent the wheel."* But the rise of AI-assisted engineering fundamentally shifts this equation. Today, we can build custom, minimal, and optimal systems directly from first principles without drowning in accidental complexity.
 
-I carry this same conviction into computing topologies: **software should be decentralized and peer-to-peer by default**. The client-server paradigm centralizes control and lacks censorship resistance. While distributed peer-to-peer architectures are often labelled "too complex," that complexity is largely an illusion of tooling. We spent thirty years refining client-server infrastructure; once we invest equivalent care into peer-to-peer primitives, building decentralized systems will feel entirely natural.
+I carry this same conviction into computing topologies: **software should be decentralized and peer-to-peer by default**. The client-server paradigm centralizes control, introducing single points of failure and arbitrary gatekeeping. While distributed peer-to-peer architectures are often labelled "too complex," that complexity is largely an illusion of tooling. We spent thirty years refining client-server infrastructure; once we invest equivalent care into peer-to-peer primitives, building decentralized systems will feel entirely natural.
 
 ![Decentralized network topology](/assets/pages/about/p2p-topology.jpg#wide "Figure 1: Peer-to-peer topology: sovereign interconnected nodes without central broker mediation.")
 
