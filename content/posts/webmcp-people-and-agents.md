@@ -12,16 +12,12 @@ series:
   id: webmcp-agent-ready-web
   title: "WebMCP and the agent-ready web"
   part: 1
-draft: true
+draft: false
 ---
 
-The web has an extraordinary distribution model. Send someone a link and they can open an application, sign in, and start working. Updates arrive without asking everyone to install a new release. The same platform serves documents, banking applications, design tools, and business systems.
+The web has an extraordinary distribution model: send someone a link, and they can open an application, sign in, and start working immediately without installing a runtime or downloading updates. The same platform serves documents, banking software, design tools, and complex business systems. That ubiquity makes the browser a natural, compelling environment for the next stage of agentic computing.
 
-That makes the browser an interesting place to look for the next stage of agentic computing.
-
-We often discuss agents as something added to a product: a chat panel, a support assistant, a new way to search. WebMCP explores another direction. A website can expose capabilities that an agent can discover and invoke while working within the user’s browsing context.
-
-The application becomes easier to operate through an assistant.
+Until recently, we tended to think of agents as something added on top of a product—a conversational sidebar, an embedded support bot, or an AI search overlay. WebMCP explores a fundamentally different direction. Rather than embedding an agent inside a specific app or forcing an external agent to blindly parse visual elements, WebMCP allows an open website to expose structured capabilities directly to browser-based agents working within the user’s active session. The application itself becomes directly operable through an assistant.
 
 ## From interpreting a screen to invoking a capability
 ```mermaid Two paths to the same application logic.
@@ -36,13 +32,9 @@ flowchart TD
 ```
 
 
-Consider a ride-booking website. A human understands its interface through labels, maps, prices, and buttons. An agent operating that interface may have to interpret those elements and work out which sequence completes the task.
+Consider a ride-booking application. A person navigates its interface intuitively through visual hierarchy: labels, maps, highlighted surge pricing banners, and interactive buttons. For an AI agent operating that same page, interpreting raw DOM elements or taking screenshots to infer which sequence of clicks books a ride is brittle, slow, and error-prone. The agent is forced to reverse-engineer developer intent from visual markup intended for human eyes.
 
-A structured tool offers another path. The website can describe a capability for obtaining a ride quote, declare its inputs, and provide an implementation that uses application logic. The draft’s [tool definition](https://webmachinelearning.github.io/webmcp/#dictdef-modelcontexttool) makes these pieces concrete: a name, a description, expected inputs and the application action to perform.
-
-The interesting change is the relationship between the product and its operator. The product can explicitly describe what an agent can do, instead of relying entirely on the agent to infer that from a human interface.
-
-This is what makes WebMCP worth an architect’s attention: it introduces another way to expose an existing web application’s behavior. The [WebMCP introduction](https://webmachinelearning.github.io/webmcp/#intro) describes tools implemented in client-side script and collaborative workflows within a shared interface.
+WebMCP provides a cleaner, structured alternative. Instead of leaving an agent to guess its way through visual controls, the webpage can explicitly declare capabilities via client-side script. Using the draft's [tool definition](https://webmachinelearning.github.io/webmcp/#dictdef-modelcontexttool) and [`registerTool()`](https://webmachinelearning.github.io/webmcp/#dom-modelcontext-registertool) API, the application advertises typed tools—with names, descriptions, input schemas, and execution callbacks tied directly to frontend application logic. An agent operating within the browser discovers these tools dynamically and invokes them with structured parameters, turning visual guesswork into an explicit, deterministic contract.
 
 ## Where MCP fits
 ```mermaid Illustrative integration paths. WebMCP does not determine where the model runs.
@@ -56,41 +48,23 @@ flowchart TD
 ```
 
 
-The similar names invite confusion.
+The naming similarity invites immediate confusion, but WebMCP is neither a replacement for the Model Context Protocol (MCP) nor simply a JavaScript implementation of it. As Chrome’s [comparison of WebMCP and MCP](https://developer.chrome.com/docs/ai/webmcp/compare-mcp) points out, they operate at different layers of the architectural stack. MCP defines a protocol (typically over JSON-RPC) connecting AI clients to local or remote servers hosting external tools, prompts, and resources. It operates primarily at the service level, independent of whether a user even has a web browser open.
 
-MCP provides a protocol through which AI applications connect to capabilities offered by servers, including tools and context. Those servers can be local or remote. The official [MCP architecture overview](https://modelcontextprotocol.io/docs/2026-07-28/learn/architecture) explains the host, client and server roles. WebMCP provides browser APIs through which a webpage exposes tools to agents.
-
-In the ride example, an MCP integration could provide access to the booking service. A WebMCP implementation could expose capabilities through the website the user has open, using its current application context.
-
-These approaches can complement each other. A service integration can support workflows that do not depend on an open webpage. A browser integration can support collaboration inside an existing web experience.
-
-WebMCP is not a replacement for MCP or simply its JavaScript implementation. Chrome’s [comparison of WebMCP and MCP](https://developer.chrome.com/docs/ai/webmcp/compare-mcp) makes that distinction explicit.
+WebMCP, by contrast, is an in-browser API that allows an open webpage to expose capabilities running within the user's active browsing session. In our ride-booking example, a traditional MCP server might provide direct API access to the central dispatch backend for headless automations. A WebMCP tool exposes capabilities from the website currently open in a tab, inheriting the user's active session, visual state, local cookies, and ongoing interactions. Rather than competing, the two models complement each other: service-level MCP serves autonomous background pipelines, while WebMCP bridges the gap when an agent and a person are co-operating the same web application.
 
 ## An application platform with another audience
 
-The opportunity extends beyond reducing the number of clicks required to complete a task.
+Designing for an agent audience is not merely about minimizing click counts for routine chores; it enables genuine collaborative workflows. Because WebMCP tools execute inside the live browser session, the user and the assistant can share the application state. A user can ask an assistant to research conflicting travel options, pre-fill an intricate expense claim, or configure complex software settings. Once the agent stages the work, the human can visually inspect the resulting state on screen, adjust specific fields, and finalize the outcome. The web interface remains the source of truth and the primary supervisory control plane.
 
-A user might ask an assistant to compare options, prepare a configuration, or explain a decision, then take over personally. The website remains a place where the user can inspect and change the work.
-
-For product teams, this suggests a useful question: which capabilities would become more valuable if users could delegate part of the interaction?
-
-The answer might be configuring a complicated product, preparing an expense claim, or finding a suitable booking. Each combines application state, user preferences, and decisions that may benefit from assistance.
-
-This also changes the integration discussion. A company may need service-level access for some agent workflows and browser-level access for others. The choice should follow the user’s task and the context required to complete it.
+This creates a compelling design challenge for product and engineering teams: identifying which capabilities become exponentially more valuable when partially delegated. The best candidates are rarely all-or-nothing automations. They are high-friction workflows that combine structured application state with nuanced user preferences—such as filtering through dozens of travel itineraries or assembling a customized merchandise order. By exposing these steps as discoverable in-page capabilities, products invite assistance without surrendering transparency.
 
 ## Enthusiasm with a clear boundary
 
-WebMCP remains emerging technology. As checked on **30 October 2026**, the current specification is a Community Group draft, explicitly not a W3C Standard or a specification on the W3C Standards Track. Its evolution and implementation support deserve attention alongside its possibilities. See the [specification’s status](https://webmachinelearning.github.io/webmcp/#sotd).
+While the architectural potential is substantial, WebMCP remains an early, emerging technology. As of late 2026, the specification is a W3C Community Group draft—not a finalized web standard. Browser support and agent runtime integration are actively evolving, and the specification itself is deliberately agnostic about where the underlying language model executes (which could be an in-browser model or a cloud-hosted agent). The most pragmatic way to experiment today is with a single, tightly bounded workflow: identify a task where users struggle with cognitive load, expose a focused set of structured capabilities, and observe how agent interaction reshapes the experience.
 
-It also says nothing by itself about where the model runs. A browser-based interaction can involve a remotely hosted model.
+Yet exposing programmatic shortcuts alongside a visual interface introduces a subtle, unexpected architectural trap. When an agent can trigger backend actions without navigating the step-by-step visual journey, what happens to the warning banners, price disclosures, and explicit confirmation checkboxes carefully designed for human eyes? If the agent interface bypasses those gates, the system can commit users to outcomes they never actually approved.
 
-The architectural opportunity is nevertheless substantial. The web already distributes applications at enormous scale. Exposing their capabilities explicitly to agents could make those applications useful through a broader range of interactions.
-
-A sensible experiment starts with one bounded workflow. Choose something users already find difficult, expose a small set of understandable capabilities, and observe whether assistance improves the outcome.
-
-For leadership and product teams, viewing this transition purely as a new distribution channel conceals a significant trap. When an agent shortcut can reach the backend without passing through the visual journey, what happens to the disclosures, price checks, and approval gates carefully built into the human interface?
-
-That question leads directly to the next article: how unaligned agent shortcuts can quietly produce unintentional dark patterns—and why this creates brand, regulatory, and architectural risks that leadership cannot afford to ignore.
+In the next article, we examine how unaligned agent shortcuts can quietly produce unintentional dark patterns—and how architects can keep agent efficiency aligned with informed user consent.
 
 ## An accompanying example
 
