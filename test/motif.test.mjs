@@ -219,10 +219,9 @@ test('render produces /motifs/ recap page including both published articles and 
 });
 
 
-// Captured before extraction; Truchet now has dedicated geometry regression tests.
+// Captured before extraction; Truchet and guilloché now have dedicated geometry tests.
 test('unchanged original algorithms retain byte-identical hero and mark geometry', () => {
   const digests = {
-    guilloche: '4cd3d1ee49fd7dd9eea31b96017e06a7d3bbe81aaf572fbfc9e8cef6fe0893e7',
     subdivision: '8b214c15299c7a8c6ecb31b04fa2350686f72fec3e2fc30c6148260e62d6ea03'
   };
   for (const { id, draw } of ALGORITHMS.filter(a => a.id in digests)) {

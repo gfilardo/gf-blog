@@ -64,16 +64,14 @@ To ensure variety across the publication without sacrificing visual coherence, t
 
 
 ### Algorithm 2: Guilloché & Harmonograph Curves (`guilloche`)
-* **Mathematical Basis**: Coupled parametric harmonic oscillators:
-  $$\begin{aligned}
-  x(t) &= A_1 \sin(f_1 t + p_1) + A_2 \sin(f_2 t + p_2) \\
-  y(t) &= B_1 \cos(f_3 t + p_3) + B_2 \cos(f_4 t + p_4)
-  \end{aligned}$$
-* **Aesthetic**: Classical bank-note line engravings, astrolabes, and astronomical calculation dials.
+* **Mathematical Basis**: Undamped Lissajous figures, with one sinusoid per axis: `x(t) = 0.85 R sin(fx t + phase)`, `y(t) = 0.85 R cos(fy t)`. Each dial's actual frequencies are distinct and coprime, including the pair assembled for the left dial. This prevents equal-frequency collapse into a line or ellipse.
+* **Aesthetic**: Classical bank-note line engravings, astrolabes, and astronomical calculation dials. The existing `guilloche` ID and activation date are retained.
 * **DNA Adaptation**:
-  - `form: 'hero'`: A horizontal harmonograph triptych featuring 3 phase-coupled oscillating dials with fine connecting axis rules.
-  - `form: 'mark'`: A single multi-lobed rosette with centered radial symmetry.
-* **Focal Accent**: Exactly one resonant harmonic sub-curve renders in `stroke="var(--accent)"`.
+  - `form: 'hero'`: Three phase-related dials with fine connecting axis rules.
+  - `form: 'mark'`: An exact scaled version of the central dial: the same frequency order, phase, curve, ring, and relative dot size.
+* **Curve Quality**: Cubic Bézier segments use analytic positions and tangents. Segment counts follow a fourth-derivative interpolation error bound and increase with frequency and radius, targeting less than 0.03 coordinate units of error before SVG rounding. Periodic endpoints and tangents join smoothly at the closed seam.
+* **Focal Accent**: The central dial's curve and center dot use `var(--accent)` in both forms.
+* **Reference**: [Paul Bourke, *Harmonograph*](https://paulbourke.net/geometry/harmonograph/index.html). The implementation uses the simpler undamped Lissajous case rather than the multi-oscillator or damped models discussed there.
 
 ### Algorithm 3: Recursive Guillotine Subdivision (`subdivision`)
 * **Mathematical Basis**: 2D Binary Space Partitioning (BSP). A root rectangle is recursively subdivided along alternating axes at harmonic golden ratios down to a depth of 3–5 levels.
