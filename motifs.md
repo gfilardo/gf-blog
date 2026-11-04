@@ -74,12 +74,14 @@ To ensure variety across the publication without sacrificing visual coherence, t
 * **Reference**: [Paul Bourke, *Harmonograph*](https://paulbourke.net/geometry/harmonograph/index.html). The implementation uses the simpler undamped Lissajous case rather than the multi-oscillator or damped models discussed there.
 
 ### Algorithm 3: Recursive Guillotine Subdivision (`subdivision`)
-* **Mathematical Basis**: 2D Binary Space Partitioning (BSP). A root rectangle is recursively subdivided along alternating axes at harmonic golden ratios down to a depth of 3–5 levels.
-* **Aesthetic**: Bauhaus floorplans, De Stijl grids, and structural elevation blueprints.
+* **Mathematical Basis**: Binary Space Partitioning (BSP) over one canonical 4.5:1 plan: a central square and two wings. Seeded ancestry-specific streams determine split bias, harmonic ratios, and early stopping. Cuts snap to a 1/24-unit drafting grid, with a minimum room dimension of 1/6 unit.
+* **Aesthetic**: Bauhaus floorplans and structural elevations, with deliberately varied subdivision depth, broad quiet rooms, and a clear hierarchy of rules.
 * **DNA Adaptation**:
-  - `form: 'hero'`: A wide elevation study with horizontal partitioning, dimension ticks, and boundary registration marks.
-  - `form: 'mark'`: A balanced square grid with nested modular subdivisions.
-* **Focal Accent**: Exactly one prominent boundary rule or node dot renders in `stroke="var(--accent)"`, with one focal cell tinted in `fill="var(--surface)"`.
+  - `form: 'hero'`: Shows the complete plan, extending the central square with west and east wings.
+  - `form: 'mark'`: Shows the exact central square with matching partitions, stroke hierarchy, and focal room. Geometry decisions are independent of output dimensions.
+  - At the actual 44px list size, the minimum room dimension remains just over six pixels, preserving the full shared structure without crowded slivers.
+* **Focal Accent**: One of the larger central rooms is tinted with `var(--surface)` and outlined with `var(--accent)`. The fill and boundary refer to the same room; unrelated coordinate dots are omitted. Shared edges are removed from ordinary rules so the accent is drawn once.
+* **Identity**: The existing `subdivision` ID and `2026-01-01` epoch are retained. The revamp intentionally updates its generated geometry.
 
 ---
 
@@ -158,7 +160,7 @@ To prevent diverse algorithms from feeling like arbitrary clip art, all generato
    - Background fills: `none` or selective `fill="var(--surface)"`
 4. **Complexity Floors & Degenerate Seed Guardrails**:
    Every generator guarantees structural visual balance:
-   - **Parameter Clamping**: Harmonic frequencies are chosen exclusively from coprime sets $\{ (2,3), (3,5), (3,7), (5,7) \}$ to prevent destructive cancellation into flat ellipses; BSP recursion depth is clamped between 3 and 5.
+   - **Parameter Clamping**: Harmonic frequencies are chosen exclusively from coprime sets $\{ (2,3), (3,5), (3,7), (5,7) \}$ to prevent destructive cancellation into flat ellipses; BSP depth is bounded at 3–4 levels centrally and 2–3 in the wings, with early stopping and minimum room dimensions.
    - **Sanity Floors**: If total generated path length or vertex count falls below an aesthetic minimum, the seed is deterministically perturbed (`seed = (seed + 0x9e3779b9) >>> 0`) until structural sufficiency is satisfied.
 
 ---
@@ -321,7 +323,7 @@ To maintain the feeling of a fine architectural pen, every stroke specifies `str
 
 ### The "Ink Clot" Failure Mode
 In dense mathematical families, this proportional expansion causes visual collapse:
-- **Recursive Subdivision (`subdivision`)**: At BSP recursion depth 4, the generator places 15 divider lines. Squeezed into $28\text{px}$, 15 lines of $1\text{px}$ stroke take up 15 pixels of solid ink, leaving only 13 pixels across all sub-cells.
+- **Original recursive subdivision** (before its revamp): At fixed BSP recursion depth 4, the generator placed 15 divider lines. Squeezed into $28\text{px}$, 15 lines of $1\text{px}$ stroke take up 15 pixels of solid ink, leaving only 13 pixels across all sub-cells.
 - **Cellular Automata (`automata`)**: With 8–11 generations reflected into a seal ($15\text{--}21$ rows), each cell row is only $\sim 1.4\text{px}$ high. Hairline boundaries collide, and the mark collapses into an illegible ink blot.
 
 ### The Three Remediation Paths
@@ -330,7 +332,7 @@ In dense mathematical families, this proportional expansion causes visual collap
 | :--- | :--- | :--- | :--- |
 | **1. Subpixel Stroke Attenuation** | Set `stroke-width: 0.75px` in CSS. | Reduces total ink coverage. | **Rejected as sole fix**: On standard (1x) displays, subpixel strokes blur due to antialiasing. Does not relieve geometric crowding when 15 lines occupy 28 pixels. |
 | **2. Bounding Box Expansion** | Increase mark to $44 \times 44\text{px}$. | Expands pixel surface area by **$2.5\times$**, restoring line separation. | **Adopted**: The $130\text{px}$ `.article-date` column easily accommodates $44\text{px}$. Matches Apple/W3C touch targets and gives the mark the presence of a classic printer’s colophon. |
-| **3. Optical Sizing (`form: 'micro'`)** | Generator adapts internal density to canvas size. | Translates Renaissance punchcutting into code: preserves mathematical DNA (seed, frequencies, partition cuts) while culling sub-splinters. | **Roadmap**: Simplifies subdivision depth to 2–3, automata to 5–6 generations, and drops high-frequency coordinate noise for ultra-crisp micro rendering. |
+| **3. Optical Sizing (`form: 'micro'`)** | Generator adapts internal density to canvas size. | Translates Renaissance punchcutting into code: preserves mathematical DNA (seed, frequencies, partition cuts) while culling sub-splinters. | **Partially addressed**: Subdivision now enforces readable minimum room dimensions without changing its shared tree. Algorithm-specific micro detail reduction remains a roadmap item for denser families. |
 
 ---
 
@@ -353,6 +355,6 @@ motif:
 
 ## 10. Implementation Backlog
 
-Contour maps are implemented with a `2027-01-04` activation date; L-systems are implemented with a `2027-02-04` activation date. Modular chord diagrams are implemented with a `2027-03-04` activation date. **Circle packing** remains planned. The existing **subdivision motif needs a revamp**, particularly its compositional variety, focal feature, and consistency across sizes.
+Contour maps are implemented with a `2027-01-04` activation date; L-systems are implemented with a `2027-02-04` activation date. Modular chord diagrams are implemented with a `2027-03-04` activation date. **Circle packing** remains planned. **Subdivision has been revamped** with a shared canonical plan, variable partition hierarchy, readable room sizes, and one coherent focal room.
 
 Implementation approaches, seed variation, references, and acceptance criteria are documented in [Motifs to Implement & Existing Motifs to Revamp](motif-improvements.md#9-motifs-to-implement--existing-motifs-to-revamp).

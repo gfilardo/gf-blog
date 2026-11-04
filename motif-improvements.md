@@ -164,7 +164,7 @@ When geometry authored in a $120 \times 120$ coordinate system is scaled down to
 
 ### The "Ink Clot" Failure Mode
 In geometrically dense algorithms, this proportional ink growth causes visual collapse:
-- **Recursive Subdivision (`subdivision`)**: At BSP recursion depth 4, the generator calculates 15 internal divider lines. In a 28px square, 15 divider lines of $1\text{px}$ thickness consume 15 physical pixels of stroke. Only 13 pixels remain across all 16 sub-cells. Lines touch, gaps vanish, and the graphic degenerates into an illegible black ink blot.
+- **Original recursive subdivision** (before its revamp): At fixed BSP recursion depth 4, the generator calculated 15 internal divider lines. In a 28px square, 15 divider lines of $1\text{px}$ thickness consume 15 physical pixels of stroke. Only 13 pixels remain across all 16 sub-cells. Lines touch, gaps vanish, and the graphic degenerates into an illegible black ink blot.
 - **Cellular Automata (`automata`)**: With 8–11 generations reflected into a seal ($15\text{--}21$ cell rows), each row is barely $1.4\text{px}$ tall. A $1\text{px}$ contour edge completely smothers neighboring cells.
 
 ```
@@ -202,7 +202,7 @@ Generative algorithms must adopt the same **optical sizing**:
 - The generator receives `bounds.form = 'micro'`.
 - It preserves the **exact same visual DNA** (same seed, same frequency ratios, same partition cuts, same cellular rule).
 - But it actively prunes unresolvable sub-splinters:
-  - `subdivision`: Clamps recursion depth to 2–3 (yielding 4–7 bold Bauhaus blocks instead of 16 crowded slivers).
+  - `subdivision`: Its implemented revamp uses early stopping and minimum room dimensions to preserve the same readable structure at 44px. Additional pruning could be considered for smaller displays.
   - `automata`: Evolving 5–6 generations instead of 10 (producing a sharp, readable heraldic seal with distinct stepped contours).
   - `guilloche`: Omits the fine inner dashed astrolabe ring, highlighting the primary resonant petal.
 
@@ -273,15 +273,15 @@ This roadmap tracks additions and revamps. Contour maps are implemented and regi
 - Accent a circle that remains identifiable in the compact crop. Keep minimum visible radii and gaps for the list mark.
 - Reference: [The Coding Train, circle packing walkthrough](https://thecodingtrain.com/challenges/50-animated-circle-packing).
 
-### Subdivision: Revamp Required
+### Subdivision — Revamp Implemented
 
-The existing `subdivision` motif needs a revamp. Its current fixed-depth rectangular splits are a starting point, but it needs stronger compositional variety, a clearer focal feature, and consistent geometry across sizes.
+The existing `subdivision` entry has been revamped in `static/js/motif/subdivision.mjs`, keeping its ID and `2026-01-01` activation date.
 
-- **Preserve the subdivision tree across sizes.** The current split orientation depends on the canvas aspect ratio, so the same seed can produce different trees for the banner and mark. Define the seeded structure independently of the output bounds, then choose a meaningful crop or adaptation.
-- **Improve structural variation.** Replace the uniform depth-4 treatment with deliberate variation in split hierarchy, cell proportions, and areas of negative space. Different seeds should produce recognizably different architectural compositions.
-- **Make the accent coherent.** Tie the accented divider, highlighted cell, and marker to the same structural feature instead of choosing the divider and cell independently.
-- **Design for the list mark.** Preserve the main partitions while omitting unreadable subdivisions. Enforce minimum cell dimensions and line separation at the displayed size.
-- **Keep the existing identity.** Revamp the existing `subdivision` entry rather than treating this as an additional motif family.
+- **Shared tree across sizes.** Partitions are generated in a canonical 4.5:1 plan before applying canvas bounds. The compact mark reproduces its central square; west and east wings extend the hero. Branch ancestry controls randomness independently of traversal and output dimensions.
+- **Structural variation.** Seeded axis biases, harmonic split ratios, quantized cuts, and branch-specific early stopping replace the uniform depth-4 treatment. Larger rooms provide deliberate negative space alongside finer partitions.
+- **Coherent accent.** A larger central room receives both the surface tint and the complete accent outline. Its shared boundaries are removed from ordinary rules to avoid double-stroking. The independently chosen divider and floating dot have been removed.
+- **Readable list marks.** A minimum room dimension of 1/6 unit corresponds to just over six pixels in the actual 44px mark. This preserves identical partitions and hierarchy across sizes without microscopic cells.
+- **Validation.** Tests cover area conservation, non-overlapping rooms, minimum dimensions, seeded variety, exact central-crop consistency, coherent accent geometry, finite coordinates, and bounded SVG output.
 
 ### Shared Acceptance Criteria
 

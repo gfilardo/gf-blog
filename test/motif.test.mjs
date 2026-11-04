@@ -1,7 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import path from 'node:path';
-import { createHash } from 'node:crypto';
 import { XMLValidator, XMLParser } from 'fast-xml-parser';
 import { render } from '../src/render.mjs';
 import {
@@ -218,20 +217,6 @@ test('render produces /motifs/ recap page including both published articles and 
   assert.match(indexHtml, /class="article-motif-mark"/);
 });
 
-
-// Captured before extraction; Truchet and guilloché now have dedicated geometry tests.
-test('unchanged original algorithms retain byte-identical hero and mark geometry', () => {
-  const digests = {
-    subdivision: '8b214c15299c7a8c6ecb31b04fa2350686f72fec3e2fc30c6148260e62d6ea03'
-  };
-  for (const { id, draw } of ALGORITHMS.filter(a => a.id in digests)) {
-    const geometry = [0, 42, 4294967295].flatMap(seed => [
-      { width: 360, height: 80, form: 'hero' },
-      { width: 120, height: 120, form: 'mark' }
-    ].map(bounds => draw(seed, bounds))).join('');
-    assert.equal(createHash('sha256').update(geometry).digest('hex'), digests[id]);
-  }
-});
 
 test('new epoch preserves historical selection and makes every new algorithm reachable', () => {
   const epochs = [...new Set(ALGORITHMS.map(a => a.since))];
