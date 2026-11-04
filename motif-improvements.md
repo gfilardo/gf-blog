@@ -234,7 +234,7 @@ Architecture should be inspectable. Rather than burying generative logic inside 
 
 ## 9. Motifs to Implement & Existing Motifs to Revamp
 
-This roadmap tracks additions and revamps. Contour maps are implemented and registered for the `2027-01-04` epoch; L-systems are implemented for the `2027-02-04` epoch. Modular chord diagrams and circle packing remain proposed additions. Flow fields are also already implemented. See [motifs.md](motifs.md) for the current implementations and registry.
+This roadmap tracks additions and revamps. Contour maps are implemented and registered for the `2027-01-04` epoch; L-systems are implemented for the `2027-02-04` epoch. Modular chord diagrams are implemented for the `2027-03-04` epoch. Circle packing remains a proposed addition. Flow fields are also already implemented. See [motifs.md](motifs.md) for the current implementations and registry.
 
 ### New Motif Families
 
@@ -242,7 +242,7 @@ This roadmap tracks additions and revamps. Contour maps are implemented and regi
 | :--- | :--- | :--- | :--- | :--- |
 | **Contour maps** (`contours`, implemented; epoch `2027-01-04`) | Topographic islands, nested loops, merging ridges and valleys. | Sample a smooth scalar field built from several seeded hills and valleys. Extract multiple contour levels with marching squares, join the segments into SVG paths, and simplify gentle stretches. | Field centers, strengths, widths, and contour levels should change the number and connectivity of the contours. | Moderate |
 | **L-systems** (`l-system`, implemented; epoch `2027-02-04`) | Branching structures, crystalline networks, and recursive ornaments. | Rewrite a short symbol sequence with a small grammar, then interpret it with turtle commands for movement, turning, and branch push/pop. Emit SVG path segments. | Grammar selection, branching choices, angles, segment lengths, and iteration depth should create different structures. | Easy for a small bounded grammar set |
-| **Modular chord diagrams** (`chords`, proposed ID) | Woven circles, stars, and curved envelopes emerging from straight lines. | Place `N` points on a circle and connect point `i` to `(i × multiplier) mod N`. Group the resulting straight segments into SVG paths. | Point count, multiplier, and connection rules should alter connectivity and symmetry. | Very easy |
+| **Modular chord diagrams** (`chords`, implemented; epoch `2027-03-04`) | Woven circles, stars, and curved envelopes emerging from straight lines. | Place `N` points on a circle and connect point `i` to `(i × multiplier) mod N`. Group the resulting straight segments into SVG paths. | Point count, multiplier, and connection rules should alter connectivity and symmetry. | Very easy |
 | **Circle packing** (`circle-packing`, proposed ID) | Clusters of non-overlapping circles with contrasting sizes and pockets of negative space. | Place seeded candidate centers and grow circles until they meet a neighbor or the boundary. Emit native SVG circles. A bounded greedy packing is sufficient; optimal packing is not required. | Placement bias, radius distribution, and the packing boundary should change the composition. | Easy at modest circle counts |
 
 #### Contour Maps — Implemented
@@ -259,11 +259,11 @@ This roadmap tracks additions and revamps. Contour maps are implemented and regi
 - Stochastic decisions use stable symbol ancestry IDs. The hero shows growth stages; the compact mark reproduces the complete central tree, including the same connected root-to-tip accent.
 - Reference: [Prusinkiewicz and Lindenmayer, *The Algorithmic Beauty of Plants*, especially chapter 1](https://www.algorithmicbotany.org/papers/).
 
-#### Modular Chord Diagrams
+#### Modular Chord Diagrams — Implemented
 
-- Reject trivial parameter combinations that produce only self-connections or an empty figure, deduplicate repeated edges, and cap the line count to preserve negative space.
-- Preserve the point count and connection rule across sizes; if optical simplification is necessary, select a stable subset of the original connections.
-- Accent one connected cycle or another coherent subset rather than an unrelated decorative segment.
+- Implemented in `static/js/motif/chords.mjs`: seeded multiplication circles with optional offsets. Fixed points and reverse duplicates are omitted; shallow rules are filtered out, and point counts are limited to 30–60.
+- The compact mark reproduces the complete central graph, with the same point count, rule, phase, offset, and accent. Side studies compare related valid rules.
+- The accent follows one short connected cycle or walk of up to eight edges; these edges are excluded from the muted path to avoid double-stroking.
 - Reference: [Modular multiplication circle implementation](https://github.com/kathuman/multiplication-circle).
 
 #### Circle Packing

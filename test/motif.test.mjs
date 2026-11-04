@@ -21,7 +21,7 @@ import {
 
 test('registry maintains monotonic since dates, unique IDs, and valid draw functions', () => {
   assertRegistryInvariants();
-  assert.deepEqual(ALGORITHMS.map(a => a.id), ['truchet', 'guilloche', 'subdivision', 'supershape', 'automata', 'flow-field', 'switchyard', 'contours', 'l-system']);
+  assert.deepEqual(ALGORITHMS.map(a => a.id), ['truchet', 'guilloche', 'subdivision', 'supershape', 'automata', 'flow-field', 'switchyard', 'contours', 'l-system', 'chords']);
   assert.equal(isKnownAlgorithm('truchet'), true);
   assert.equal(isKnownAlgorithm('guilloche'), true);
   assert.equal(isKnownAlgorithm('subdivision'), true);

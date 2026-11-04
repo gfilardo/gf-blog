@@ -129,6 +129,18 @@ Reference: [Prusinkiewicz and Lindenmayer, *The Algorithmic Beauty of Plants*, c
 
 ---
 
+### Modular Chord Diagrams (2027-03-04)
+
+**Modular chord diagrams (`chords`)** place 30–60 equally spaced points around a circle and connect each point `i` to `(i × multiplier + offset) mod N`. The seed chooses the point count, multiplication rule, optional offset, and rotational phase. Fixed points are omitted and undirected edges are deduplicated. Rules that yield mostly isolated pairs or lack a connected walk of at least three edges are excluded.
+
+The hero compares three related valid multiplication rules with the same point count, offset, and phase. The compact mark reproduces the complete central graph, including its accented walk. The accent is a short connected cycle when available, otherwise a connected walk of up to eight edges. Its edges are removed from the muted geometry, avoiding double-stroking. Line counts and accent lengths are bounded to preserve negative space.
+
+Registration starts on **March 4, 2027**, one month after L-systems. Preview immediately using `chords` in the `/motifs/` algorithm selector or `motif: chords` frontmatter; automatic selection for earlier published articles is unchanged.
+
+Reference: [Modular multiplication circle explanation and demo](https://github.com/kathuman/multiplication-circle).
+
+---
+
 ## 4. Visual Cohesion & Design System Integration
 
 To prevent diverse algorithms from feeling like arbitrary clip art, all generators adhere to four system constraints:
@@ -184,6 +196,9 @@ const ALGORITHMS = [
 
   // Epoch 4
   { id: 'l-system', since: '2027-02-04', draw: renderLSystem },
+
+  // Epoch 5
+  { id: 'chords', since: '2027-03-04', draw: renderChords },
 ];
 ```
 
@@ -233,6 +248,7 @@ Supported YAML frontmatter:
 - `static/js/motif/switchyard.mjs`
 - `static/js/motif/contours.mjs`
 - `static/js/motif/l-system.mjs`
+- `static/js/motif/chords.mjs`
 
 Shared hashing, PRNG, numeric formatting, and selection helpers live in `static/js/motif/utils.mjs`. Algorithms import helpers directly, avoiding circular dependencies on the registry. The build copies the complete module tree for the browser widget; server and browser use identical implementations. Existing named exports remain supported.
 
@@ -337,6 +353,6 @@ motif:
 
 ## 10. Implementation Backlog
 
-Contour maps are implemented with a `2027-01-04` activation date; L-systems are implemented with a `2027-02-04` activation date. Remaining planned motif families are **modular chord diagrams** and **circle packing**. The existing **subdivision motif needs a revamp**, particularly its compositional variety, focal feature, and consistency across sizes.
+Contour maps are implemented with a `2027-01-04` activation date; L-systems are implemented with a `2027-02-04` activation date. Modular chord diagrams are implemented with a `2027-03-04` activation date. **Circle packing** remains planned. The existing **subdivision motif needs a revamp**, particularly its compositional variety, focal feature, and consistency across sizes.
 
 Implementation approaches, seed variation, references, and acceptance criteria are documented in [Motifs to Implement & Existing Motifs to Revamp](motif-improvements.md#9-motifs-to-implement--existing-motifs-to-revamp).

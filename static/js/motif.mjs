@@ -18,6 +18,8 @@ import { renderContours } from './motif/contours.mjs';
 export { renderContours };
 import { renderLSystem } from './motif/l-system.mjs';
 export { renderLSystem };
+import { renderChords } from './motif/chords.mjs';
+export { renderChords };
 
 // Immutable registry of dated algorithm epochs
 export const ALGORITHMS = [
@@ -34,6 +36,8 @@ export const ALGORITHMS = [
   { id: 'contours', since: '2027-01-04', draw: renderContours },
   // Epoch 4: L-systems, one month after contour maps.
   { id: 'l-system', since: '2027-02-04', draw: renderLSystem },
+  // Epoch 5: modular chord diagrams.
+  { id: 'chords', since: '2027-03-04', draw: renderChords },
 ];
 
 /**
