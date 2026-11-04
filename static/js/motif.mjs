@@ -14,6 +14,8 @@ import { renderFlowField } from './motif/flow-field.mjs';
 export { renderFlowField };
 import { renderSwitchyard } from './motif/switchyard.mjs';
 export { renderSwitchyard };
+import { renderContours } from './motif/contours.mjs';
+export { renderContours };
 
 // Immutable registry of dated algorithm epochs
 export const ALGORITHMS = [
@@ -26,6 +28,8 @@ export const ALGORITHMS = [
   { id: 'automata', since: '2026-10-03', draw: renderAutomata },
   { id: 'flow-field', since: '2026-10-03', draw: renderFlowField },
   { id: 'switchyard', since: '2026-10-03', draw: renderSwitchyard },
+  // Epoch 3: contour maps, two months after their implementation.
+  { id: 'contours', since: '2027-01-04', draw: renderContours },
 ];
 
 /**

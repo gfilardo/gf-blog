@@ -21,7 +21,7 @@ import {
 
 test('registry maintains monotonic since dates, unique IDs, and valid draw functions', () => {
   assertRegistryInvariants();
-  assert.deepEqual(ALGORITHMS.map(a => a.id), ['truchet', 'guilloche', 'subdivision', 'supershape', 'automata', 'flow-field', 'switchyard']);
+  assert.deepEqual(ALGORITHMS.map(a => a.id), ['truchet', 'guilloche', 'subdivision', 'supershape', 'automata', 'flow-field', 'switchyard', 'contours']);
   assert.equal(isKnownAlgorithm('truchet'), true);
   assert.equal(isKnownAlgorithm('guilloche'), true);
   assert.equal(isKnownAlgorithm('subdivision'), true);
@@ -76,7 +76,7 @@ test('date-epoch selection remains stable for historical articles', () => {
   // Simulating future registry extension
   const extendedRegistry = [
     ...ALGORITHMS,
-    { id: 'future-algo', since: '2027-01-01', draw: () => '<path d="M0,0"/>' }
+    { id: 'future-algo', since: '2028-01-01', draw: () => '<path d="M0,0"/>' }
   ];
 
   const res2 = resolveMotifParameters(doc, extendedRegistry);

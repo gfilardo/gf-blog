@@ -103,6 +103,18 @@ Switchyard shares the `2026-10-03` epoch with supershapes, automata, and flow fi
 
 ---
 
+### Contour Maps (2027-01-04)
+
+**Contour maps (`contours`)** trace six elevation levels through a seeded scalar field of elliptical Gaussian hills and valleys. A zero-elevation boundary encloses the terrain in islands, distinguishing the map from open flow-field trajectories. Nearby central summits produce ridges and saddles within the compact crop. Small crosses identify up to four separated local maxima of the actual sampled field. Marching squares interpolates edge crossings and joins them into complete isolines; a bilinear asymptotic decider resolves saddle cells, with a deterministic choice for exact ties. Shared grid-edge identities prevent cracks between cells.
+
+The field is sampled once on a canonical 4.5:1 terrain grid, independently of output size. The compact mark clips its central square, interpolating new endpoints at the crop boundary. Closed loops retain their closure; cropped paths remain open rather than gaining artificial closing chords. Both forms preserve elevation levels and accent membership. The accented contour is the middle-elevation component nearest the central hill.
+
+Registration starts on **January 4, 2027**, two calendar months after implementation on November 4, 2026. Published articles dated before that epoch retain their existing automatic selection. Authors can preview it immediately in `/motifs/`, in undated draft selection, or with `motif: contours`.
+
+Reference: [BorisTheBrave, marching squares tutorial](https://www.boristhebrave.com/docs/sylves/1/articles/tutorials/marching_squares.html).
+
+---
+
 ## 4. Visual Cohesion & Design System Integration
 
 To prevent diverse algorithms from feeling like arbitrary clip art, all generators adhere to four system constraints:
@@ -152,6 +164,9 @@ const ALGORITHMS = [
   { id: 'flow-field',  since: '2026-10-03', draw: renderFlowField },
 
   { id: 'switchyard', since: '2026-10-03', draw: renderSwitchyard },
+
+  // Epoch 3
+  { id: 'contours', since: '2027-01-04', draw: renderContours },
 ];
 ```
 
@@ -199,6 +214,7 @@ Supported YAML frontmatter:
 - `static/js/motif/automata.mjs`
 - `static/js/motif/flow-field.mjs`
 - `static/js/motif/switchyard.mjs`
+- `static/js/motif/contours.mjs`
 
 Shared hashing, PRNG, numeric formatting, and selection helpers live in `static/js/motif/utils.mjs`. Algorithms import helpers directly, avoiding circular dependencies on the registry. The build copies the complete module tree for the browser widget; server and browser use identical implementations. Existing named exports remain supported.
 
@@ -303,6 +319,6 @@ motif:
 
 ## 10. Implementation Backlog
 
-Planned motif families are **contour maps**, **L-systems**, **modular chord diagrams**, and **circle packing**. The existing **subdivision motif needs a revamp**, particularly its compositional variety, focal feature, and consistency across sizes.
+Contour maps are implemented with a `2027-01-04` activation date. Remaining planned motif families are **L-systems**, **modular chord diagrams**, and **circle packing**. The existing **subdivision motif needs a revamp**, particularly its compositional variety, focal feature, and consistency across sizes.
 
 Implementation approaches, seed variation, references, and acceptance criteria are documented in [Motifs to Implement & Existing Motifs to Revamp](motif-improvements.md#9-motifs-to-implement--existing-motifs-to-revamp).

@@ -234,22 +234,22 @@ Architecture should be inspectable. Rather than burying generative logic inside 
 
 ## 9. Motifs to Implement & Existing Motifs to Revamp
 
-This is an implementation backlog. The four families below are proposed additions, not currently registered algorithms. Flow fields are already implemented and are not part of this backlog. See [motifs.md](motifs.md) for the current implementations and registry.
+This roadmap tracks additions and revamps. Contour maps are implemented and registered for the `2027-01-04` epoch; the other three families below remain proposed additions. Flow fields are also already implemented. See [motifs.md](motifs.md) for the current implementations and registry.
 
 ### New Motif Families
 
 | Proposed motif | Visual character | Implementation approach | Seed-driven variation | Relative effort |
 | :--- | :--- | :--- | :--- | :--- |
-| **Contour maps** (`contours`, proposed ID) | Topographic islands, nested loops, merging ridges and valleys. | Sample a smooth scalar field built from several seeded hills and valleys. Extract multiple contour levels with marching squares, join the segments into SVG paths, and simplify gentle stretches. | Field centers, strengths, widths, and contour levels should change the number and connectivity of the contours. | Moderate |
+| **Contour maps** (`contours`, implemented; epoch `2027-01-04`) | Topographic islands, nested loops, merging ridges and valleys. | Sample a smooth scalar field built from several seeded hills and valleys. Extract multiple contour levels with marching squares, join the segments into SVG paths, and simplify gentle stretches. | Field centers, strengths, widths, and contour levels should change the number and connectivity of the contours. | Moderate |
 | **L-systems** (`l-system`, proposed ID) | Branching structures, crystalline networks, and recursive ornaments. | Rewrite a short symbol sequence with a small grammar, then interpret it with turtle commands for movement, turning, and branch push/pop. Emit SVG path segments. | Grammar selection, branching choices, angles, segment lengths, and iteration depth should create different structures. | Easy for a small bounded grammar set |
 | **Modular chord diagrams** (`chords`, proposed ID) | Woven circles, stars, and curved envelopes emerging from straight lines. | Place `N` points on a circle and connect point `i` to `(i × multiplier) mod N`. Group the resulting straight segments into SVG paths. | Point count, multiplier, and connection rules should alter connectivity and symmetry. | Very easy |
 | **Circle packing** (`circle-packing`, proposed ID) | Clusters of non-overlapping circles with contrasting sizes and pockets of negative space. | Place seeded candidate centers and grow circles until they meet a neighbor or the boundary. Emit native SVG circles. A bounded greedy packing is sufficient; optimal packing is not required. | Placement bias, radius distribution, and the packing boundary should change the composition. | Easy at modest circle counts |
 
-#### Contour Maps
+#### Contour Maps — Implemented
 
-- Build the scalar field in a shared coordinate space before adapting it to the canvas. The compact mark should show a recognizable part of the banner's terrain.
-- Resolve ambiguous marching-squares saddle cells deterministically and join shared endpoints consistently, so contours do not acquire cracks or arbitrary connections.
-- Accent one complete contour or a clearly defined visible portion of it. Keep sufficient spacing between levels at list-mark size.
+- Implemented in `static/js/motif/contours.mjs`. The scalar field uses a shared coordinate space, and the compact mark crops the central square of the banner's terrain.
+- Saddle cells use the bilinear asymptotic decider with deterministic ties. Shared grid-edge identities join neighboring segments without coordinate-rounding cracks.
+- One central middle-elevation component is accented before cropping, preserving its visible portions and colors across sizes. All six elevation levels share the same seeded terrain. A zero-elevation boundary gives enclosed islands; crosses identify actual local maxima. These cartographic features distinguish the family from open flow-field trajectories.
 - Reference: [BorisTheBrave, marching squares tutorial](https://www.boristhebrave.com/docs/sylves/1/articles/tutorials/marching_squares.html).
 
 #### L-systems
