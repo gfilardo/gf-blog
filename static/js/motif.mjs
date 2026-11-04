@@ -16,6 +16,8 @@ import { renderSwitchyard } from './motif/switchyard.mjs';
 export { renderSwitchyard };
 import { renderContours } from './motif/contours.mjs';
 export { renderContours };
+import { renderLSystem } from './motif/l-system.mjs';
+export { renderLSystem };
 
 // Immutable registry of dated algorithm epochs
 export const ALGORITHMS = [
@@ -30,6 +32,8 @@ export const ALGORITHMS = [
   { id: 'switchyard', since: '2026-10-03', draw: renderSwitchyard },
   // Epoch 3: contour maps, two months after their implementation.
   { id: 'contours', since: '2027-01-04', draw: renderContours },
+  // Epoch 4: L-systems, one month after contour maps.
+  { id: 'l-system', since: '2027-02-04', draw: renderLSystem },
 ];
 
 /**

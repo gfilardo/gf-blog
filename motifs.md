@@ -115,6 +115,20 @@ Reference: [BorisTheBrave, marching squares tutorial](https://www.boristhebrave.
 
 ---
 
+### L-systems (2027-02-04)
+
+**L-systems (`l-system`)** rewrite a symbol sequence using one of three curated grammar families: branching forks, asymmetric sprigs, and crystalline fans. The turtle interpreter draws `F`, turns on `+` and `-`, and saves/restores position, heading, step length, and ancestry with `[` and `]`. Branch steps shrink as the interpreter descends into the stack.
+
+The seed chooses the grammar, rule alternatives, angles, branch proportions, and a small tilt. Each symbol has a stable ancestry ID. Random decisions depend on that ID and seed, so additional generations preserve existing branches exactly rather than shifting a sequential random stream.
+
+The hero shows early, complete, and intermediate growth stages using the complete model's framing. The compact mark reproduces the complete central tree and its one accented root-to-tip branch. Both geometry and accent selection are resolved before applying canvas bounds. Expansions are limited to eight iterations and 8,192 symbols, with smaller curated depths used for the motif; oversized or unbalanced expressions are rejected rather than partially rendered.
+
+Registration starts on **February 4, 2027**, one calendar month after contour maps. Earlier published articles retain their automatic selection. Preview immediately in `/motifs/` or with `motif: l-system`.
+
+Reference: [Prusinkiewicz and Lindenmayer, *The Algorithmic Beauty of Plants*, chapter 1](https://algorithmicbotany.org/papers/#abop).
+
+---
+
 ## 4. Visual Cohesion & Design System Integration
 
 To prevent diverse algorithms from feeling like arbitrary clip art, all generators adhere to four system constraints:
@@ -167,6 +181,9 @@ const ALGORITHMS = [
 
   // Epoch 3
   { id: 'contours', since: '2027-01-04', draw: renderContours },
+
+  // Epoch 4
+  { id: 'l-system', since: '2027-02-04', draw: renderLSystem },
 ];
 ```
 
@@ -215,6 +232,7 @@ Supported YAML frontmatter:
 - `static/js/motif/flow-field.mjs`
 - `static/js/motif/switchyard.mjs`
 - `static/js/motif/contours.mjs`
+- `static/js/motif/l-system.mjs`
 
 Shared hashing, PRNG, numeric formatting, and selection helpers live in `static/js/motif/utils.mjs`. Algorithms import helpers directly, avoiding circular dependencies on the registry. The build copies the complete module tree for the browser widget; server and browser use identical implementations. Existing named exports remain supported.
 
@@ -319,6 +337,6 @@ motif:
 
 ## 10. Implementation Backlog
 
-Contour maps are implemented with a `2027-01-04` activation date. Remaining planned motif families are **L-systems**, **modular chord diagrams**, and **circle packing**. The existing **subdivision motif needs a revamp**, particularly its compositional variety, focal feature, and consistency across sizes.
+Contour maps are implemented with a `2027-01-04` activation date; L-systems are implemented with a `2027-02-04` activation date. Remaining planned motif families are **modular chord diagrams** and **circle packing**. The existing **subdivision motif needs a revamp**, particularly its compositional variety, focal feature, and consistency across sizes.
 
 Implementation approaches, seed variation, references, and acceptance criteria are documented in [Motifs to Implement & Existing Motifs to Revamp](motif-improvements.md#9-motifs-to-implement--existing-motifs-to-revamp).
