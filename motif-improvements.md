@@ -234,16 +234,16 @@ Architecture should be inspectable. Rather than burying generative logic inside 
 
 ## 9. Motifs to Implement & Existing Motifs to Revamp
 
-This roadmap tracks additions and revamps. Contour maps are implemented and registered for the `2027-01-04` epoch; L-systems are implemented for the `2027-02-04` epoch. Modular chord diagrams are implemented for the `2027-03-04` epoch. Circle packing remains a proposed addition. Flow fields are also already implemented. See [motifs.md](motifs.md) for the current implementations and registry.
+This roadmap tracks additions and revamps. Contour maps are implemented and registered for the `2027-01-04` epoch; L-systems are implemented for the `2027-02-04` epoch. Modular chord diagrams are implemented for the `2027-03-04` epoch. Circle packing is implemented for the `2027-04-04` epoch, completing the four families in this roadmap. Flow fields are also already implemented. See [motifs.md](motifs.md) for the current implementations and registry.
 
 ### New Motif Families
 
-| Proposed motif | Visual character | Implementation approach | Seed-driven variation | Relative effort |
+| Motif family | Visual character | Implementation approach | Seed-driven variation | Relative effort |
 | :--- | :--- | :--- | :--- | :--- |
 | **Contour maps** (`contours`, implemented; epoch `2027-01-04`) | Topographic islands, nested loops, merging ridges and valleys. | Sample a smooth scalar field built from several seeded hills and valleys. Extract multiple contour levels with marching squares, join the segments into SVG paths, and simplify gentle stretches. | Field centers, strengths, widths, and contour levels should change the number and connectivity of the contours. | Moderate |
 | **L-systems** (`l-system`, implemented; epoch `2027-02-04`) | Branching structures, crystalline networks, and recursive ornaments. | Rewrite a short symbol sequence with a small grammar, then interpret it with turtle commands for movement, turning, and branch push/pop. Emit SVG path segments. | Grammar selection, branching choices, angles, segment lengths, and iteration depth should create different structures. | Easy for a small bounded grammar set |
 | **Modular chord diagrams** (`chords`, implemented; epoch `2027-03-04`) | Woven circles, stars, and curved envelopes emerging from straight lines. | Place `N` points on a circle and connect point `i` to `(i × multiplier) mod N`. Group the resulting straight segments into SVG paths. | Point count, multiplier, and connection rules should alter connectivity and symmetry. | Very easy |
-| **Circle packing** (`circle-packing`, proposed ID) | Clusters of non-overlapping circles with contrasting sizes and pockets of negative space. | Place seeded candidate centers and grow circles until they meet a neighbor or the boundary. Emit native SVG circles. A bounded greedy packing is sufficient; optimal packing is not required. | Placement bias, radius distribution, and the packing boundary should change the composition. | Easy at modest circle counts |
+| **Circle packing** (`circle-packing`, implemented; epoch `2027-04-04`) | Clusters of non-overlapping circles with contrasting sizes and pockets of negative space. | Place seeded candidate centers and grow circles until they meet a neighbor or the boundary. Emit native SVG circles. A bounded greedy packing is sufficient; optimal packing is not required. | Placement bias, radius distribution, and the packing boundary should change the composition. | Easy at modest circle counts |
 
 #### Contour Maps — Implemented
 
@@ -266,11 +266,11 @@ This roadmap tracks additions and revamps. Contour maps are implemented and regi
 - The accent follows one short connected cycle or walk of up to eight edges; these edges are excluded from the muted path to avoid double-stroking.
 - Reference: [Modular multiplication circle implementation](https://github.com/kathuman/multiplication-circle).
 
-#### Circle Packing
+#### Circle Packing — Implemented
 
-- Bound candidate attempts and circle count so dense or unlucky seeds terminate predictably. Simple pairwise collision checks are adequate for the initial version.
-- Compute a shared packing before cropping or adapting it to each surface. Restarting a random packing separately for each aspect ratio would lose the relationship between the small and large motifs.
-- Accent a circle that remains identifiable in the compact crop. Keep minimum visible radii and gaps for the list mark.
+- Implemented in `static/js/motif/circle-packing.mjs`: a greedy best-candidate packing with pairwise clearance checks in a seeded capsule. Work is bounded at 120 batches of 32 candidates and at most 64 circles.
+- A shared canonical packing is computed before rendering. The compact mark crops its central square, retaining partial boundary circles as open SVG arcs rather than restarting the packing.
+- A reserved central circle remains fully visible and accented in both forms. Medium and small radii vary below their available clearance; stroke and neutral fill choices are seeded independently of size, including on cropped arcs. A minimum radius of 0.05 world units and 0.045-unit gap keep the list mark readable.
 - Reference: [The Coding Train, circle packing walkthrough](https://thecodingtrain.com/challenges/50-animated-circle-packing).
 
 ### Subdivision — Revamp Implemented

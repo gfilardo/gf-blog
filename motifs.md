@@ -143,6 +143,20 @@ Reference: [Modular multiplication circle explanation and demo](https://github.c
 
 ---
 
+### Circle Packing (2027-04-04)
+
+**Circle packing (`circle-packing`)** fills a seeded capsule-shaped region with non-overlapping circles of varied radii. A bounded greedy search samples candidate centers in batches, chooses the one with the most free space, and grows its circle up to the nearest neighbor, boundary, or seeded radius cap. This is a visual packing, not a claim of mathematically optimal density.
+
+The complete packing is computed in canonical coordinates before applying canvas dimensions. The compact mark crops its central square; circles crossing its edges become open SVG arcs, preserving their actual curvature without straight closing chords. One reserved central circle is tinted with `var(--surface)` and stroked with `var(--accent)` in every form. Other circles receive seeded strokes from `--line`, `--muted`, and occasional `--ink`, independently of their size. Seeded fills mix `none`, `--surface`, `--line`, and occasional `--muted`; cropped arcs preserve both stroke and fill, with fill closing implicitly on the crop edge while its stroke remains open.
+
+The seed changes the capsule proportions, radius distribution, focal placement, and candidate centers. Early large anchors are retained while later circles sample a wider range below their available radius, giving medium and small discs more variety. Size and paint have separate deterministic random streams; styling does not perturb placement. Packing stops after at most 120 batches of 32 candidates or 64 circles. A minimum radius of 0.05 world units and a 0.045-unit drafting gap preserve readable outlines and negative space in the actual list mark.
+
+Registration starts on **April 4, 2027**, one month after modular chords. Preview immediately with `circle-packing` in `/motifs/` or with `motif: circle-packing` frontmatter. Automatic selection for earlier published articles is preserved.
+
+Reference: [The Coding Train, circle packing walkthrough](https://thecodingtrain.com/challenges/50-animated-circle-packing).
+
+---
+
 ## 4. Visual Cohesion & Design System Integration
 
 To prevent diverse algorithms from feeling like arbitrary clip art, all generators adhere to four system constraints:
@@ -201,6 +215,9 @@ const ALGORITHMS = [
 
   // Epoch 5
   { id: 'chords', since: '2027-03-04', draw: renderChords },
+
+  // Epoch 6
+  { id: 'circle-packing', since: '2027-04-04', draw: renderCirclePacking },
 ];
 ```
 
@@ -251,6 +268,7 @@ Supported YAML frontmatter:
 - `static/js/motif/contours.mjs`
 - `static/js/motif/l-system.mjs`
 - `static/js/motif/chords.mjs`
+- `static/js/motif/circle-packing.mjs`
 
 Shared hashing, PRNG, numeric formatting, and selection helpers live in `static/js/motif/utils.mjs`. Algorithms import helpers directly, avoiding circular dependencies on the registry. The build copies the complete module tree for the browser widget; server and browser use identical implementations. Existing named exports remain supported.
 
@@ -355,6 +373,6 @@ motif:
 
 ## 10. Implementation Backlog
 
-Contour maps are implemented with a `2027-01-04` activation date; L-systems are implemented with a `2027-02-04` activation date. Modular chord diagrams are implemented with a `2027-03-04` activation date. **Circle packing** remains planned. **Subdivision has been revamped** with a shared canonical plan, variable partition hierarchy, readable room sizes, and one coherent focal room.
+Contour maps are implemented with a `2027-01-04` activation date; L-systems are implemented with a `2027-02-04` activation date. Modular chord diagrams are implemented with a `2027-03-04` activation date. Circle packing is implemented with a `2027-04-04` activation date, completing the four planned additions. **Subdivision has been revamped** with a shared canonical plan, variable partition hierarchy, readable room sizes, and one coherent focal room.
 
 Implementation approaches, seed variation, references, and acceptance criteria are documented in [Motifs to Implement & Existing Motifs to Revamp](motif-improvements.md#9-motifs-to-implement--existing-motifs-to-revamp).

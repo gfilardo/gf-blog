@@ -20,6 +20,8 @@ import { renderLSystem } from './motif/l-system.mjs';
 export { renderLSystem };
 import { renderChords } from './motif/chords.mjs';
 export { renderChords };
+import { renderCirclePacking } from './motif/circle-packing.mjs';
+export { renderCirclePacking };
 
 // Immutable registry of dated algorithm epochs
 export const ALGORITHMS = [
@@ -38,6 +40,8 @@ export const ALGORITHMS = [
   { id: 'l-system', since: '2027-02-04', draw: renderLSystem },
   // Epoch 5: modular chord diagrams.
   { id: 'chords', since: '2027-03-04', draw: renderChords },
+  // Epoch 6: circle packing.
+  { id: 'circle-packing', since: '2027-04-04', draw: renderCirclePacking },
 ];
 
 /**
