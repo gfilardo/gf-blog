@@ -229,3 +229,62 @@ Architecture should be inspectable. Rather than burying generative logic inside 
 | **Micro-Scale Sizing** | Completed ($44\text{px}$) | Expanded mark dimensions to $44 \times 44\text{px}$, expanding pixel area by $2.5\times$ and resolving stroke density. |
 | **Interactive Gallery** | Completed (`/motifs/`) | Full audit ledger with `<motif-widget>` for real-time browser exploration and YAML copying. |
 | **Optical Sizing (`form: 'micro'`)** | Proposed Next | Generator branch culling high-recursion geometry specifically for micro-display contexts. |
+
+---
+
+## 9. Motifs to Implement & Existing Motifs to Revamp
+
+This is an implementation backlog. The four families below are proposed additions, not currently registered algorithms. Flow fields are already implemented and are not part of this backlog. See [motifs.md](motifs.md) for the current implementations and registry.
+
+### New Motif Families
+
+| Proposed motif | Visual character | Implementation approach | Seed-driven variation | Relative effort |
+| :--- | :--- | :--- | :--- | :--- |
+| **Contour maps** (`contours`, proposed ID) | Topographic islands, nested loops, merging ridges and valleys. | Sample a smooth scalar field built from several seeded hills and valleys. Extract multiple contour levels with marching squares, join the segments into SVG paths, and simplify gentle stretches. | Field centers, strengths, widths, and contour levels should change the number and connectivity of the contours. | Moderate |
+| **L-systems** (`l-system`, proposed ID) | Branching structures, crystalline networks, and recursive ornaments. | Rewrite a short symbol sequence with a small grammar, then interpret it with turtle commands for movement, turning, and branch push/pop. Emit SVG path segments. | Grammar selection, branching choices, angles, segment lengths, and iteration depth should create different structures. | Easy for a small bounded grammar set |
+| **Modular chord diagrams** (`chords`, proposed ID) | Woven circles, stars, and curved envelopes emerging from straight lines. | Place `N` points on a circle and connect point `i` to `(i × multiplier) mod N`. Group the resulting straight segments into SVG paths. | Point count, multiplier, and connection rules should alter connectivity and symmetry. | Very easy |
+| **Circle packing** (`circle-packing`, proposed ID) | Clusters of non-overlapping circles with contrasting sizes and pockets of negative space. | Place seeded candidate centers and grow circles until they meet a neighbor or the boundary. Emit native SVG circles. A bounded greedy packing is sufficient; optimal packing is not required. | Placement bias, radius distribution, and the packing boundary should change the composition. | Easy at modest circle counts |
+
+#### Contour Maps
+
+- Build the scalar field in a shared coordinate space before adapting it to the canvas. The compact mark should show a recognizable part of the banner's terrain.
+- Resolve ambiguous marching-squares saddle cells deterministically and join shared endpoints consistently, so contours do not acquire cracks or arbitrary connections.
+- Accent one complete contour or a clearly defined visible portion of it. Keep sufficient spacing between levels at list-mark size.
+- Reference: [BorisTheBrave, marching squares tutorial](https://www.boristhebrave.com/docs/sylves/1/articles/tutorials/marching_squares.html).
+
+#### L-systems
+
+- Start with a few curated grammars that give visibly different architectural or branching forms. Avoid relying solely on rotation to distinguish seeds.
+- Cap rewrite iterations, expanded symbol count, and emitted segments to prevent exponential growth from overwhelming a build or browser preview.
+- Derive stochastic branch decisions from stable branch identities. Reducing detail for a small mark must preserve the main branches and accent placement.
+- Reference: [Prusinkiewicz and Lindenmayer, *The Algorithmic Beauty of Plants*, especially chapter 1](https://www.algorithmicbotany.org/papers/).
+
+#### Modular Chord Diagrams
+
+- Reject trivial parameter combinations that produce only self-connections or an empty figure, deduplicate repeated edges, and cap the line count to preserve negative space.
+- Preserve the point count and connection rule across sizes; if optical simplification is necessary, select a stable subset of the original connections.
+- Accent one connected cycle or another coherent subset rather than an unrelated decorative segment.
+- Reference: [Modular multiplication circle implementation](https://github.com/kathuman/multiplication-circle).
+
+#### Circle Packing
+
+- Bound candidate attempts and circle count so dense or unlucky seeds terminate predictably. Simple pairwise collision checks are adequate for the initial version.
+- Compute a shared packing before cropping or adapting it to each surface. Restarting a random packing separately for each aspect ratio would lose the relationship between the small and large motifs.
+- Accent a circle that remains identifiable in the compact crop. Keep minimum visible radii and gaps for the list mark.
+- Reference: [The Coding Train, circle packing walkthrough](https://thecodingtrain.com/challenges/50-animated-circle-packing).
+
+### Subdivision: Revamp Required
+
+The existing `subdivision` motif needs a revamp. Its current fixed-depth rectangular splits are a starting point, but it needs stronger compositional variety, a clearer focal feature, and consistent geometry across sizes.
+
+- **Preserve the subdivision tree across sizes.** The current split orientation depends on the canvas aspect ratio, so the same seed can produce different trees for the banner and mark. Define the seeded structure independently of the output bounds, then choose a meaningful crop or adaptation.
+- **Improve structural variation.** Replace the uniform depth-4 treatment with deliberate variation in split hierarchy, cell proportions, and areas of negative space. Different seeds should produce recognizably different architectural compositions.
+- **Make the accent coherent.** Tie the accented divider, highlighted cell, and marker to the same structural feature instead of choosing the divider and cell independently.
+- **Design for the list mark.** Preserve the main partitions while omitting unreadable subdivisions. Enforce minimum cell dimensions and line separation at the displayed size.
+- **Keep the existing identity.** Revamp the existing `subdivision` entry rather than treating this as an additional motif family.
+
+### Shared Acceptance Criteria
+
+Each addition or revamp should remain deterministic, easy to maintain, and entirely vector-based, using the existing CSS color tokens and non-scaling drafting strokes. Put each new algorithm in its own module and expose it through the shared registry and `/motifs/` selector.
+
+Review several seeds in hero, compact, and actual 44px list-mark presentations. Variation should change the underlying geometry or connectivity, and the same seed should remain recognizable across all three surfaces. Verify finite coordinates, bounded output complexity, coherent accents, and the shared geometry between sizes before registering a new family.

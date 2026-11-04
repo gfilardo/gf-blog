@@ -300,3 +300,9 @@ motif:
   algorithm: flow-field
   seed: 42
 ```
+
+## 10. Implementation Backlog
+
+Planned motif families are **contour maps**, **L-systems**, **modular chord diagrams**, and **circle packing**. The existing **subdivision motif needs a revamp**, particularly its compositional variety, focal feature, and consistency across sizes.
+
+Implementation approaches, seed variation, references, and acceptance criteria are documented in [Motifs to Implement & Existing Motifs to Revamp](motif-improvements.md#9-motifs-to-implement--existing-motifs-to-revamp).
