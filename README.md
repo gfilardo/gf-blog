@@ -431,7 +431,13 @@ A fenced `mermaid` block is rendered to inline SVG at build time using
 `beautiful-mermaid`. Optional text after `mermaid` becomes its accessible label
 and caption. Flowcharts and sequence diagrams use the renderer's supported
 Mermaid syntax; Mermaid plugins and browser integrations are not loaded.
-No separate image files, browser JavaScript, or rendering service is needed.
+No separate image files or rendering service is needed. Diagrams remain visible
+without JavaScript. With JavaScript enabled, an expand icon opens a larger
+viewer with zoom controls and a Fit button. On phones the viewer fills the
+screen with only a close button, starts at a readable size, and supports pinch
+to zoom and dragging to pan. Desktop trackpad pinch (including Mac Safari)
+zooms the diagram under the pointer; ordinary scrolling still pans.
+Close it with the Close button or Escape to return to the article.
 
 ````markdown
 ```mermaid A request reaches the application.

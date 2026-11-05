@@ -289,6 +289,20 @@ test('inline Mermaid renders accessible, deterministic diagrams with distinct ID
   assert.throws(() => parseContent('broken.md', article('', '```mermaid\nnot-a-diagram\n```'), 'post', config), /broken.md:/);
 });
 
+test('diagram viewer loads only where needed and respects deployment base paths', async t => {
+  const dir = await fixture(t);
+  const diagram = '```mermaid Overview\nflowchart LR\n A --> B\n```';
+  await writeFile(path.join(dir, 'content/posts/diagram.md'), article('', diagram));
+  await writeFile(path.join(dir, 'content/posts/draft-diagram.md'), article('draft: true', diagram).replace('slug: example', 'slug: draft-diagram'));
+  const result = await build(dir, { basePath: '/blog' });
+  for (const route of ['posts/example/index.html', 'preview/draft-diagram/index.html']) {
+    assert.match(result.get(route), /<script src="\/blog\/js\/diagram-viewer\.js" defer><\/script>/);
+  }
+  for (const route of ['index.html', 'posts/hello-world/index.html']) {
+    assert.doesNotMatch(result.get(route), /diagram-viewer\.js/);
+  }
+  assert.ok(result.has('js/diagram-viewer.js'));
+});
 test('draft previews stay unlisted and move to published routes on release', async t => {
   const dir = await fixture(t);
   const draftPath = path.join(dir, 'content/posts/draft.md');
