@@ -12,7 +12,6 @@ a:focus-visible { outline: 2px solid var(--accent); outline-offset: 6px; }
 .site-header nav ul { display: flex; align-items: center; gap: 30px; padding: 0; margin: 0; list-style: none; }
 .site-header nav a { position: relative; text-decoration: none; color: var(--muted); font-size: 13px; }
 .site-header nav a[aria-current="page"] { color: var(--ink); font-weight: 600; }
-.nav-feed { padding-left: 25px; border-left: 1px solid var(--line); }
 main { min-height: 65vh; padding-bottom: 80px; }
 .eyebrow { display: flex; align-items: center; gap: 10px; font: 13px/1.6 var(--sans); color: var(--muted); margin: 0 0 16px; }
 h1, h2, h3, p { margin-top: 0; }
@@ -99,7 +98,7 @@ main > .eyebrow:first-child { margin-top: 70px; }
   .image-figure.image-wide { width: 100%; max-width: 100%; margin-left: 0; margin-right: 0; }
   .image-figure.image-bleed figcaption { padding: 0 25px; }
   .article-card { grid-template-columns: 130px 1fr; }
-  .site-header nav ul { gap: 20px; } .nav-feed { display: none; }
+  .site-header nav ul { gap: 20px; }
 }
 @media (max-width: 540px) {
   .site-shell { padding: 0 22px; } .site-header { gap: 16px; padding: 22px 0; flex-wrap: wrap; }
