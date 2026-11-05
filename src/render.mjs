@@ -70,8 +70,8 @@ export function render(root, site, documents) {
     return { ...n, url: local(n.path) };
   });
   for (const page of pages) {
-    const motif = page.kind === 'post' ? generateArticleMotif(page) : null;
-    const context = { site, artwork, navigation, home: local('/'), favicon: local('/favicon.svg'), stylesheet: local('/css/style.css'), feed: local('/feed.xml'), page: { motif, motifs: page.motifs ?? [], draftMotifs: page.draftMotifs ?? [], algorithms: page.algorithms ?? ALGORITHMS, seriesNav: (page.preview ? previewSeriesByRoute : seriesByRoute).get(page.route) ?? null, previewIndex: local('/preview/'), preview: false, companion: null, date: null, updated: null, body: '', tags: [], noindex: false, ...page, canonical: absolute(page.route), tagLinks: (page.tags && page.kind ? page.tags : []).map(name => ({ name: tagLabel(name), url: local(`/tags/${tagSlug(name)}/`) })) } };
+    const motifSvg = page.kind === 'post' ? generateArticleMotif(page) : null;
+    const context = { site, artwork, navigation, home: local('/'), favicon: local('/favicon.svg'), stylesheet: local('/css/style.css'), feed: local('/feed.xml'), page: { motifSvg, motifs: page.motifs ?? [], draftMotifs: page.draftMotifs ?? [], algorithms: page.algorithms ?? ALGORITHMS, seriesNav: (page.preview ? previewSeriesByRoute : seriesByRoute).get(page.route) ?? null, previewIndex: local('/preview/'), preview: false, companion: null, date: null, updated: null, body: '', tags: [], noindex: false, ...page, canonical: absolute(page.route), tagLinks: (page.tags && page.kind ? page.tags : []).map(name => ({ name: tagLabel(name), url: local(`/tags/${tagSlug(name)}/`) })) } };
     // Standalone page tags are accepted as metadata; only articles join tag archives.
     if (page.kind === 'page' || page.preview) context.page.tagLinks = [];
     if (page.posts) {

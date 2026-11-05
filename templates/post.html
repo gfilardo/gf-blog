@@ -5,9 +5,9 @@
     <p class="meta"><time datetime="{{ page.date }}">{{ page.date }}</time>{% if page.updated %} · Updated <time datetime="{{ page.updated }}">{{ page.updated }}</time>{% endif %}</p>
     {% if page.tagLinks.length %}<ul class="tags" aria-label="Tags">{% for tag in page.tagLinks %}<li><a href="{{ tag.url }}">{{ tag.name }}</a></li>{% endfor %}</ul>{% endif %}
   </header>
-  {% if page.motif %}
+  {% if page.motifSvg %}
   <div class="article-motif-wrapper" aria-hidden="true">
-    {{ page.motif | safe }}
+    {{ page.motifSvg | safe }}
   </div>
   {% endif %}
   {% if page.seriesNav %}

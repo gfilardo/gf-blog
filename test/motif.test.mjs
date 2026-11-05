@@ -328,3 +328,29 @@ test('flow fields stay substantial and bounded across seeds, including Bézier c
     }
   }
 });
+
+test('article motif configuration cannot replace the rendered SVG, including draft previews', () => {
+  const root = path.resolve(import.meta.dirname, '..');
+  const site = {
+    title: 'Test blog', author: 'Author', description: 'Test', language: 'en',
+    origin: 'https://example.com', basePath: '', copyrightYear: '2026', navigation: []
+  };
+  const configurations = [undefined, 'supershape', { algorithm: 'supershape' }, { algorithm: 'truchet', seed: 0 }, { seed: 0 }];
+  const documents = configurations.flatMap((motif, i) => [false, true].map(draft => {
+    const slug = `motif-${i}-${draft ? 'draft' : 'published'}`;
+    return {
+      source: `${slug}.md`, kind: 'post', title: slug, slug, date: '2026-10-25',
+      description: 'Motif override', draft, tags: [], route: `/posts/${slug}/`,
+      url: `/posts/${slug}/`, body: '<p>Article body</p>',
+      ...(motif === undefined ? {} : { motif })
+    };
+  }));
+  const files = render(root, site, documents);
+  for (const doc of documents) {
+    const html = files.get(`${doc.draft ? 'preview' : 'posts'}/${doc.slug}/index.html`);
+    const hero = html.match(/<div class="article-motif-wrapper"[^>]*>\s*([\s\S]*?)\s*<\/div>/);
+    assert.ok(hero, `${doc.slug} has a motif wrapper`);
+    assert.equal(hero[1], generateArticleMotif(doc), `${doc.slug} renders its resolved SVG`);
+    assert.doesNotMatch(html, /\[object Object\]/);
+  }
+});
