@@ -16,7 +16,7 @@
         <button type="button" data-action="in" aria-label="Zoom in" title="Zoom in">+</button>
         <button type="button" data-action="fit" title="Fit diagram to screen">Fit</button>
       </div>
-      <button type="button" data-action="close" aria-label="Close diagram" title="Close diagram" autofocus>×</button>
+      <button type="button" data-action="close" aria-label="Close diagram" title="Close diagram" autofocus>Close ×</button>
     </div>
     <p id="diagram-viewer-help" class="diagram-viewer-sr">Pinch to zoom. Drag, scroll, or swipe to move around.</p>
     <div class="diagram-viewer-viewport" tabindex="0" role="region" aria-label="Scrollable diagram">
@@ -129,10 +129,10 @@
     const button = document.createElement('button');
     button.type = 'button';
     button.className = 'diagram-expand';
-    button.setAttribute('aria-label', 'Expand diagram');
+    button.setAttribute('aria-label', 'Zoom diagram');
     button.setAttribute('aria-haspopup', 'dialog');
-    button.title = 'Expand diagram';
-    button.innerHTML = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M8 3H3v5m13-5h5v5M3 16v5h5m13-5v5h-5M3 3l6 6m12-6-6 6M3 21l6-6m12 6-6-6"/></svg>';
+    button.title = 'Zoom diagram';
+    button.innerHTML = '<span>Zoom</span> <span class="diagram-expand-arrow" aria-hidden="true">↗</span>';
     figure.prepend(button);
     button.addEventListener('click', () => {
       const bounds = svg.getBoundingClientRect();
