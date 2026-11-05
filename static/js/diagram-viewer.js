@@ -54,8 +54,14 @@
     zoomIn.disabled = scale >= 4;
     const insetX = Math.max(0, (viewport.clientWidth - active.width * scale) / 2);
     const insetY = Math.max(0, (viewport.clientHeight - active.height * scale) / 2);
-    viewport.scrollLeft = fit ? 0 : anchor.x * scale + insetX - point.x;
-    viewport.scrollTop = fit ? 0 : anchor.y * scale + insetY - point.y;
+    const maxScrollX = Math.max(0, active.width * scale - viewport.clientWidth);
+    const maxScrollY = Math.max(0, active.height * scale - viewport.clientHeight);
+    if (viewport.style) {
+      viewport.style.overflowX = maxScrollX > 0 ? 'auto' : 'hidden';
+      viewport.style.overflowY = maxScrollY > 0 ? 'auto' : 'hidden';
+    }
+    viewport.scrollLeft = fit || maxScrollX === 0 ? 0 : Math.max(0, Math.min(maxScrollX, anchor.x * scale + insetX - point.x));
+    viewport.scrollTop = fit || maxScrollY === 0 ? 0 : Math.max(0, Math.min(maxScrollY, anchor.y * scale + insetY - point.y));
   }
 
   // Handle touch locally, so zooming a diagram never zooms the surrounding page.
@@ -133,7 +139,21 @@
     button.setAttribute('aria-haspopup', 'dialog');
     button.title = 'Zoom diagram';
     button.innerHTML = '<span>Zoom</span> <span class="diagram-expand-arrow" aria-hidden="true">↗</span>';
-    figure.prepend(button);
+
+    const captionEl = figure.querySelector('figcaption');
+    if (captionEl) {
+      const wrapper = document.createElement('span');
+      wrapper.className = 'diagram-expand-wrap';
+      wrapper.innerHTML = '<span class="diagram-expand-sep" aria-hidden="true"> · </span>';
+      wrapper.append(button);
+      captionEl.append(wrapper);
+    } else {
+      const wrapper = document.createElement('figcaption');
+      wrapper.append(button);
+      figure.append(wrapper);
+    }
+    figure.button = button;
+
     button.addEventListener('click', () => {
       const bounds = svg.getBoundingClientRect();
       const placeholder = document.createElement('div');
@@ -142,7 +162,7 @@
       active = { svg, placeholder, button, width: Number(svg.getAttribute('width')) || svg.viewBox.baseVal.width, height: Number(svg.getAttribute('height')) || svg.viewBox.baseVal.height };
       // Move the original SVG so marker IDs and style rules are never duplicated.
       canvas.append(svg);
-      caption.textContent = figure.querySelector('figcaption')?.textContent || svg.getAttribute('aria-label') || '';
+      caption.textContent = svg.getAttribute('aria-label') || figure.querySelector('figcaption')?.childNodes[0]?.textContent?.trim() || '';
       dialog.showModal();
       document.documentElement.classList.add('diagram-viewer-open');
       const mobile = window.matchMedia('(max-width: 600px)').matches;

@@ -176,7 +176,7 @@ main > .eyebrow:first-child { margin-top: 70px; }
 @media (max-width: 540px) { .series-nav { padding: 16px; } .series-pagination { flex-direction: column; } }
 
 /* Mermaid is rendered to inline SVG during the build. */
-.mermaid-diagram { margin: 2rem 0; overflow-x: auto; }
+.mermaid-diagram { margin: 2rem 0; overflow-x: auto; overflow-y: hidden; }
 .mermaid-diagram svg { display: block; max-width: 100%; height: auto; margin: 0 auto; }
 .mermaid-diagram figcaption { margin-top: 1rem; color: var(--ink); font: 1rem/1.5 var(--sans); text-align: center; }
 
@@ -231,12 +231,13 @@ main > .eyebrow:first-child { margin-top: 70px; }
 .motif-caption { font: 11px var(--mono); color: var(--muted); margin-top: 8px; }
 
 /* Diagram expansion is added only when the viewer is available. */
-.mermaid-diagram { position: relative; }
-.diagram-expand { position: absolute; top: 8px; right: 8px; display: inline-flex; align-items: center; gap: 3px; font: 11px/1.6 var(--mono); color: var(--muted); background: transparent; border: 0; border-bottom: 1px solid var(--line); padding: 2px 0; cursor: pointer; letter-spacing: 0.02em; text-decoration: none; transition: color 0.15s ease, border-color 0.15s ease; z-index: 2; }
-.diagram-expand::before { content: ""; position: absolute; inset: -6px -8px; }
-.diagram-expand .diagram-expand-arrow { font-size: 13px; line-height: 1; transition: transform 0.15s ease; }
-.diagram-expand:hover { color: var(--accent); border-color: var(--accent); }
-.diagram-expand:hover .diagram-expand-arrow { transform: translate(1px, -1px); }
+.mermaid-diagram figcaption .diagram-expand { position: relative; display: inline-flex; align-items: center; gap: 3px; font: 600 13px/1.4 var(--sans); color: var(--accent); background: transparent; border: 0; border-bottom: 1.5px solid var(--accent); padding: 0 0 1px; margin-left: 6px; cursor: pointer; letter-spacing: 0.01em; text-decoration: none; vertical-align: baseline; transition: color 0.15s ease, border-color 0.15s ease; white-space: nowrap; }
+.mermaid-diagram figcaption .diagram-expand::before { content: ""; position: absolute; inset: -6px -8px; }
+.mermaid-diagram figcaption .diagram-expand .diagram-expand-arrow { font-size: 14px; font-weight: 600; line-height: 1; transition: transform 0.15s ease; }
+.mermaid-diagram figcaption .diagram-expand:hover { color: var(--ink); border-color: var(--ink); }
+.mermaid-diagram figcaption .diagram-expand:hover .diagram-expand-arrow { transform: translate(1px, -1px); }
+.diagram-expand-wrap { white-space: nowrap; }
+.diagram-expand-sep { opacity: 0.45; margin: 0 4px; font-size: 13px; }
 .diagram-expand:focus-visible, .diagram-viewer button:focus-visible, .diagram-viewer-viewport:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 .diagram-viewer-open { overflow: hidden; }
 .diagram-viewer { box-sizing: border-box; width: calc(100% - 32px); max-width: 1600px; height: calc(100dvh - 32px); max-height: none; padding: 10px; border: 1px solid var(--line); border-radius: 6px; color: var(--ink); background: var(--paper); font: 13px/1.5 var(--sans); }

@@ -163,3 +163,69 @@ test('printing closes the viewer and immediately restores the inline diagram', (
   assert.equal(viewport.scrollLeft, 0);
   assert.doesNotThrow(() => dialog.fire('close'));
 });
+
+test('diagram with figcaption appends zoom button inline to the caption', () => {
+  class Element {
+    listeners = new Map();
+    style = {};
+    clientWidth = 400;
+    clientHeight = 600;
+    addEventListener(name, fn) { this.listeners.set(name, fn); }
+    fire(name, values = {}) {
+      const event = { preventDefault() { this.defaultPrevented = true; }, ...values };
+      this.listeners.get(name)?.(event);
+      return event;
+    }
+    setAttribute() {}
+    append(...children) { this.children = (this.children || []).concat(children); }
+    before() {}
+    replaceWith() {}
+    focus() {}
+    getBoundingClientRect() { return { left: 0, top: 0, width: 400, height: 320 }; }
+    scrollTo() {}
+    showModal() { this.open = true; }
+    close() { this.open = false; }
+  }
+  const figcaption = new Element();
+  figcaption.childNodes = [{ textContent: 'Figure 1: Request flow' }];
+  const svg = new Element();
+  svg.getAttribute = key => ({ width: '1000', height: '800', 'aria-label': 'Overview' })[key];
+  const figure = new Element();
+  figure.querySelector = selector => selector === 'svg' ? svg : selector === 'figcaption' ? figcaption : null;
+  const captionOutput = new Element();
+  const dialog = new Element();
+  dialog.querySelector = selector => ({
+    '.diagram-viewer-viewport': new Element(),
+    '.diagram-viewer-canvas': new Element(),
+    output: new Element(),
+    '#diagram-viewer-caption': captionOutput,
+    '[data-action="out"]': new Element(),
+    '[data-action="in"]': new Element()
+  })[selector];
+  const document = {
+    querySelectorAll: () => [figure],
+    createElement: tag => tag === 'dialog' ? dialog : new Element(),
+    body: new Element(), documentElement: { classList: { add() {}, remove() {} } }
+  };
+  const window = new Element();
+  window.matchMedia = () => ({ matches: true });
+  vm.runInNewContext(source, {
+    document, HTMLDialogElement: Element, window,
+    ResizeObserver: class { observe() {} }
+  });
+  assert.ok(figure.button);
+  figure.button.fire('click');
+  assert.equal(dialog.open, true);
+  assert.equal(captionOutput.textContent, 'Overview');
+});
+
+test('diagram that fits vertically locks vertical overflow and prevents vertical wiggle', () => {
+  const { viewport, touch } = viewer({ height: 200 });
+  assert.equal(viewport.style.overflowY, 'hidden');
+  assert.equal(viewport.scrollTop, 0);
+  // Simulating dragging diagonally with a vertical drift
+  touch('pointerdown', 1, 100, 200);
+  touch('pointermove', 1, 200, 250);
+  assert.equal(viewport.scrollTop, 0);
+  assert.equal(viewport.style.overflowY, 'hidden');
+});
