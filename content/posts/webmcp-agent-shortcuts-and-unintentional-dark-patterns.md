@@ -17,39 +17,35 @@ draft: true
 
 > In an agent-ready web, **dark patterns** can emerge entirely by accident. When an application exposes a direct WebMCP tool that bypasses the warning banners, price checks, and acceptance steps displayed on screen, the result is an unintentional dark pattern. To the developer, it was just a clean tool wrapper. But to the user holding an unapproved charge, the outcome is indistinguishable from deceptive design: commitment without informed consent.
 
-A ride-booking website shows a warning: surge pricing is active, and the ride costs €85. The person must press **Accept this fare** before the booking button becomes available.
+A ride-booking website displays a prominent amber warning: high demand is active, surge pricing applies, and the trip home will cost €85 instead of the usual €25. Before the booking button becomes available, the interface insists on an explicit human action: the person must review the price and press **Accept this fare** to acknowledge the surge.
 
-An agent receives a broad request to get the user home. A WebMCP tool calls the booking operation directly. The ride is booked, although the application has no recorded approval for the €85 quote.
+Beside that open browser tab, an AI assistant receives a simple conversational prompt: *“Get me a ride home.”* Working inside the active session via WebMCP, the agent discovers a registered booking tool and calls it immediately. The ride is booked, the credit card is charged, and a car is dispatched—all without the application ever recording user consent for that €85 quote.
 
-Nobody set out to deceive the user. The implementation assumed that every booking request came after the acceptance screen. The tool introduced another route to the same operation, and that assumption stopped holding.
+Nobody set out to deceive anyone. The frontend team had carefully designed the confirmation gate to protect the passenger, while the backend team had assumed that any request reaching the booking service had naturally passed through that screen. But by exposing an unaligned programmatic shortcut into the active tab, the application created a quiet architectural bypass. What the developer viewed as a helpful tool became, in practice, an automated charge the user never authorized.
 
 ## One operation, two journeys
 
-With WebMCP, the website itself exposes actions that an agent can use within the open page. The person and the agent are using the same application, often with the same signed-in account, but they may reach a booking through different steps. Chrome’s [comparison with MCP](https://developer.chrome.com/docs/ai/webmcp/compare-mcp) explains this browser-based context.
+With WebMCP, a website exposes capabilities directly to an in-browser assistant operating within the active page. As Chrome's [comparison with MCP](https://developer.chrome.com/docs/ai/webmcp/compare-mcp) points out, this co-presence is fundamentally different from a remote API call: the human and the agent share the same browser tab, the same authentication cookies, and the same underlying application state. Yet they arrive at transactions through completely different journeys.
 
-The human journey has a price-specific acceptance step. The tool journey invokes the capability directly. That difference is useful only if the application carries the important prerequisites across both paths.
+**The visual journey** is built around progressive disclosure. A disabled button, a prominent warning label, and a mandatory confirmation toggle guide the human through a deliberate cognitive pause. **The programmatic journey**, by contrast, is designed for efficiency: an agent discovers a tool, populates a schema, and executes a callback. 
 
-Here, the screen requires acceptance while the booking service merely assumes it. Disabling a button guides the person through the expected steps. It does not prevent another route from reaching the same operation.
+That architectural difference is safe only if the application enforces its business prerequisites equally across both entry points.
 
-The fare can even be present in the tool result. This example does not depend on the agent inventing a price, assuming a missing fee is zero, or misunderstanding cancellation terms. The failure is the absence of a required approval check when booking.
+In our ride-booking example, the visual interface requires explicit price acceptance, while the underlying service merely assumes it has already occurred. Disabling a DOM button is an effective visual guide for a human clicking with a mouse, but it does nothing to prevent an agent from invoking the underlying execution callback directly. Crucially, this failure does not depend on a hallucinating model or an invented price. Even when the tool accurately inspects the €85 fare, the failure remains: the system committed funds without verifying that the human consented to that price.
 
 ## Friction asymmetry: the decision disappears in the shortcut
 
-I call this **friction asymmetry**: the person is asked to pause and decide, while the agent is offered a shortcut. A warning, price comparison or explicit acceptance can give a person an opportunity to reconsider. A compact tool contract can reduce several interactions to one invocation.
+I call this **friction asymmetry**: the human interface is engineered with deliberate friction to protect user autonomy, while the agent interface is engineered to eliminate friction for programmatic speed.
 
-The useful distinction is between unnecessary effort and a meaningful decision. Making someone scroll through terms does not establish understanding. Requiring acceptance of a clearly presented price serves a more specific purpose. When we compress a journey into a tool, that decision must remain represented somewhere in the contract and enforcement.
+Not all friction is valuable, of course. Forcing a user to scroll through pages of boilerplate legal terms creates annoyance rather than understanding. But requiring a customer to acknowledge a 3× surge multiplier serves an essential purpose: it transforms passive viewing into informed consent. When developers build an agent capability, they naturally compress a multi-step human workflow into a single, compact function call. In that compression, the boundary between tedious friction and protective decision-making is easily lost.
 
-The flawed tool asks only which offer to book. It leaves out an important requirement: someone must first accept that fare. “Show fare, accept fare, book” has become “book this offer.” Even when the price is available to the agent, the need for a separate decision can disappear from the shortcut.
-
-The agent can use the tool exactly as described without satisfying the rule imposed on the person. It might still discover the warning by inspecting the page. The problem is that the action offered to it does not reliably preserve that decision.
+In a naive tool registration, "display fare, require acceptance, commit booking" gets compressed into a single `bookRide({ quoteId })` call. The tool asks only *which* offer to book, omitting the prerequisite of *who* agreed to pay for it. Even if the agent runtime inspects the page or reads the surge price from the DOM, the tool contract itself contains no mechanism to enforce or verify that the user consented. The agent operates in good faith against the schema it was given, but the protective decision has vanished into the shortcut.
 
 ## The illusion of shared context
 
-Someone looking at a browser agent beside an open website may reasonably expect it to respect the same warning and constraints as the buttons on screen. The tab appears to be shared ground: the fare is there, the booking button is disabled, and acceptance has not happened.
+This divergence produces an **illusion of shared context**. When users observe an AI assistant operating within their active browser window, they naturally assume co-presence: *the agent sees what I see, shares my context, and must be bound by the same rules and warnings displayed on screen.* If the booking button is grayed out pending acceptance, the user intuitively expects the agent to be blocked as well.
 
-An agent’s action does not automatically inherit the restrictions shown on screen. It may reach the booking service without checking why the button is disabled. Sharing a tab or a signed-in account does not establish agreement about what has been accepted.
-
-This is the mismatch worth designing for. The user sees one coherent product; the implementation has two entry points with different contracts.
+In reality, an in-page tool callback does not inherit DOM-level visual constraints unless explicitly engineered to do so. The agent bypasses the disabled button and triggers the execution callback directly. Sharing a browser tab or an authenticated session establishes co-location, not shared understanding. While the user experiences one coherent application, the underlying architecture exposes two entry points governed by fundamentally different rules.
 
 ## How an unintentional dark pattern emerges
 
@@ -63,33 +59,25 @@ flowchart TD
     API --> C[Book without checking approval]
 ```
 
-Dark patterns in human interfaces are usually deliberate: a growth team adds pre-checked add-ons, hides fees, or obscures a cancellation button to steer user behavior.
+In human UX design, dark patterns are typically deliberate: growth teams engineering countdown timers to manufacture false urgency, pre-selecting high-cost insurance add-ons, or burying subscription cancellations behind labyrinthine exit surveys. The term carries strong moral weight because it implies a calculated intent to steer or trap the user.
 
-In an agent-ready web, dark patterns can emerge entirely by accident. When an application exposes a direct WebMCP tool that bypasses the warning banners, price checks, and acceptance steps displayed on screen, the result is an **unintentional dark pattern**.
+In an agent-ready web, the motivation is fundamentally different, but the consequence is identical. When developers register an unconstrained WebMCP tool directly to a backend booking endpoint, their intention is benign: they are simply exposing an in-browser capability. Yet by decoupling programmatic execution from the visual confirmation gate, the compound system converts an open-ended instruction (*“get me home”*) into an unreviewed financial liability. The result is an **unintentional dark pattern**: an outcome that subverts user autonomy without anyone intending to deceive.
 
-A team implements a confirmation screen. The booking API is then reused by a naive WebMCP adapter, without moving the confirmation requirement into the underlying operation. The product now makes a financial commitment on a path that does not require the price-specific acceptance its human interface promises.
+Traditional statutory definitions of dark patterns, such as those in the EU Digital Services Act (DSA) or US Federal Trade Commission (FTC) enforcement policies, were conceived around deceptive visual manipulation—misleading button hierarchies, hidden disclosures, and trick wording. A programmatic tool schema that skips an approval check does not fit that classical visual mold.
 
-To the developer, it was just a clean tool wrapper and an architectural omission. But to the user holding an unapproved €85 charge, the outcome is indistinguishable from deceptive design: commitment without informed consent. “Get me home” is treated as sufficient to commit to this €85 fare, even though the product ordinarily asks the user to accept that exact price.
-
-Strictly speaking, statutory definitions of dark patterns (such as those in the EU Digital Services Act or FTC enforcement policies) were conceived around manipulative visual interfaces: deceptive layouts, disguised buttons, and trick microcopy. An API adapter omitting an approval check does not fit that classical regulatory taxonomy. 
-
-Yet consumer protection frameworks share an essential principle: unfair and deceptive practices are evaluated by their **effect on user autonomy and choice, not the developer's subjective intent**. The law does not ask whether an engineering team had malicious intent or merely made an architectural omission; it asks whether the user was committed without free and informed consent. From the user's perspective, the technical nuance between a deceptive button and an unaligned agent tool is meaningless. Neither interface was deceptive on its own; the dark pattern is an emergent property of the gap between what the visual interface promises and what the tool interface permits.
-
-This is an illustrative failure scenario, not evidence that WebMCP itself deceives users or that all agents will behave this way. An agent host might independently request confirmation. The application should nevertheless enforce its own approval requirement rather than depend on an unspecified caller behavior.
-
-The draft’s discussion of [misrepresentation of intent](https://webmachinelearning.github.io/webmcp/#misrepresentation-of-intent) and [ambiguous finalization](https://webmachinelearning.github.io/webmcp/#scenario-ambiguous-finalization) provides relevant background. The ride scenario and diagnosis here are this series’ application-design analysis.
+Yet consumer protection frameworks share an overriding principle: unfair and deceptive practices are evaluated by their **effect on consumer autonomy and choice, not by the developer's subjective intent**. Consumer protection law does not grant an exemption for good intentions or rushed frontend adapters; it asks whether the user was bound without clear, informed consent. When an unaligned agent tool permits a commitment that the visual UI explicitly gates, **the dark pattern lives in the gap between the two interfaces**. Neither interface was deceptive on its own, but the compound system produces a deceptive outcome. The WebMCP draft’s discussion of [misrepresentation of intent](https://webmachinelearning.github.io/webmcp/#misrepresentation-of-intent) and [ambiguous finalization](https://webmachinelearning.github.io/webmcp/#scenario-ambiguous-finalization) highlights this exact risk of unaligned execution.
 
 ## Isn’t this just a backend bug?
 
-Yes: a script calling the same endpoint could expose the missing check too. Depending on the particular control, the pattern belongs to the established problem described by [CWE-602: Client-Side Enforcement of Server-Side Security](https://cwe.mitre.org/data/definitions/602.html). WebMCP does not invent that weakness.
+At this point, an experienced backend or security engineer might object: *isn't this just a backend bug?*
 
-But that diagnosis alone misses the product-design problem. The page now advertises a structured capability to an agent, alongside a visual journey that promises a prior decision. Reusing a backend operation without translating the visual journey’s prerequisites creates a divergence between the two interfaces. The service needs to check approval, and the agent needs a clear way to find out how that approval is obtained.
+Strictly speaking, yes. A script calling the underlying booking endpoint with `curl` would trigger the exact same unapproved transaction. In classical security taxonomy, this vulnerability is cataloged as [CWE-602: Client-Side Enforcement of Server-Side Security](https://cwe.mitre.org/data/definitions/602.html)—relying on a disabled button in the browser to enforce a business rule rather than checking it on the server. WebMCP did not invent this weakness.
 
-The unintentional dark pattern emerges in that divergence. The human UI clearly discloses the price, and the tool looks like an ordinary wrapper, yet the combined system treats an unapproved fare as accepted. The user experiences the exact loss of agency that consumer protection frameworks seek to prevent, even when no one intended to deceive.
+Yet dismissing this as merely a backend bug overlooks the dual-audience product reality. In a traditional web app, a disabled button at least protected the vast majority of legitimate users navigating with a mouse. But once an application adopts WebMCP, it intentionally invites browser agents to operate the interface via structured tools. If the backend fails to enforce the visual journey's prerequisites, the application effectively publishes an in-page API that subverts its own consumer disclosures. The security fix must happen on the server, but the design challenge lies in ensuring that the tool contract makes those prerequisites discoverable and enforceable for the agent.
 
 ## Make the API enforce what the UI requires
 
-The correction is straightforward: the acceptance action records approval for the quoted offer, and the booking operation checks for that approval before committing.
+The remedy begins with architectural alignment: the backend must refuse to commit any booking without verifiable proof that the user accepted the quoted terms.
 
 ```mermaid Both entry points check approval for the specific offer at the API.
 flowchart TD
@@ -103,19 +91,19 @@ flowchart TD
     V -->|Yes| C[Check conditions and commit]
 ```
 
-The frontend presents the surge warning and price. Accepting creates an application approval record tied to that offer. The agent cannot replace that record simply by claiming that the fare was accepted. If the quote changes or expires, its approval cannot silently authorize a different commitment.
+When the human reviews the surge warning and clicks **Accept this fare**, the frontend sends an acceptance request that creates an explicit approval record tied directly to that offer version on the server. When the booking button—or the WebMCP booking tool—submits the transaction, the API checks for that unexpired approval before charging the card. An agent cannot satisfy this check simply by passing `approved: true` in its payload. If the quote changes, expires, or lacks a recorded decision, the backend firmly rejects the commitment.
 
-This was already sound application design before agents. [OWASP’s transaction-authorization guidance](https://cheatsheetseries.owasp.org/cheatsheets/Transaction_Authorization_Cheat_Sheet.html) requires server-side enforcement and protection of significant transaction data. A prescribed UI journey could conceal missing enforcement; a structured agent entry point makes the omission particularly visible.
+This has always been the foundation of sound system architecture. As [OWASP’s transaction-authorization guidance](https://cheatsheetseries.owasp.org/cheatsheets/Transaction_Authorization_Cheat_Sheet.html) emphasizes, critical transaction parameters must be bound to explicit authorization and verified on the server. **In a purely visual interface, client-side assumptions could remain hidden in the UI for years. In an agent-ready web, where programmatic tools operate alongside visual controls, those omissions immediately surface as production defects.**
 
 ## The same mismatch beyond ride booking
 
-The same mismatch can appear elsewhere. Consider three hypothetical cases:
+The tension between visual disclosures and agent shortcuts extends far beyond surge pricing. Consider three common interaction models where this gap easily appears:
 
-- **Checkout defaults:** a person can remove an optional €25 add-on, but the agent’s checkout action offers no equivalent choice and silently includes it. Both routes complete a purchase, but only one preserves that choice.
-- **Visible filters:** the page shows direct flights after 18:00, but the agent’s search-and-book action ignores those selections. The interface suggests shared selection state while the tool acts on a different set of options.
-- **Unequal capabilities:** a product exposes a convenient subscription tool but no equivalent cancellation capability. A tool that makes cancellation easier could improve user agency; exposing only the easy acquisition path can deepen the imbalance. The extra questions must still be assessed for purpose rather than counting every confirmation as harmful friction.
+- **Checkout add-ons and default tips:** In a travel checkout flow, an optional €25 travel insurance fee or a default 20% gratuity is clearly shown on screen. A human spots the itemized breakdown and unchecks the box before paying. If the registered WebMCP `completeCheckout` tool accepts only a cart identifier and applies default server-side add-ons, an agent executing *“complete my purchase”* will silently buy the insurance the user avoided.
+- **Visual search filters:** A user configures specific filters on a booking page—nonstop flights only, departing after 18:00. If the developer registers a generic `searchAndBook` tool that bypasses the active viewmodel and queries the raw backend catalog, the agent may book a multi-leg early morning flight that violates the selections currently displayed in the user's tab.
+- **Asymmetric capabilities (the agent Roach Motel):** A subscription service provides an effortless, one-click `subscribe` tool for browser agents, while keeping cancellation locked behind five pages of exit surveys and retention discounts in the human UI. Providing an agent capability for acquisition while denying it for cancellation architecturally hardwires friction asymmetry in favor of the merchant.
 
-These are hypothetical design-review scenarios, rather than reported incidents. They all ask the same question: does the agent interface preserve the material information, choices and prerequisites of the human interface?
+Each of these patterns asks the same fundamental question: does the tool contract preserve the choices, disclosures, and material constraints presented to the human eye?
 
 ## Why `consequentialHint` doesn’t solve the problem
 
@@ -132,25 +120,27 @@ Annotations remain valuable for helping agents reason about risk and preventing 
 
 ## The executive blind spot: brand, law, and architecture
 
-For executive leadership, making an application "agent-ready" often sounds like an unalloyed growth initiative: expose a few WebMCP tools, let browser agents book through the website, and unlock a frictionless distribution channel. 
+For executive leadership and product owners, adopting WebMCP is often viewed purely as a top-line growth driver: register a few browser capabilities, let AI assistants shop on the site, and unlock a frictionless new distribution channel.
 
-Viewing the agent transition purely through the lens of growth conceals three strategic risks:
+Yet treating agent-readiness as a superficial frontend convenience blinds organizations to three significant strategic risks. 
 
-- **Brand trust and customer churn:** When a customer asks an assistant to "get me a ride home" and later discovers an unapproved €85 charge on their statement, they will not blame the AI model or the browser vendor. They will blame the merchant. A capability intended to create effortless delight instead produces customer churn, brand damage, chargeback disputes, and customer support overhead.
-- **Regulatory and compliance exposure:** Leadership often assumes that regulatory liability requires deliberate deception. But consumer protection authorities—including the FTC in the US and enforcement under the EU Digital Services Act—evaluate unfair practices by their **effect on consumer autonomy and informed consent, not developer intent**. Deploying an agent shortcut that commits users without on-screen disclosures means shipping deceptive design to production, regardless of good intentions.
-- **Underestimating the architectural investment:** Slapping naive WebMCP adapters over existing client code creates immediate, brittle technical debt. As Part 4 demonstrates, true agent-readiness is not a frontend script; it requires aligning domain-level quote verification, explicit approval tokens, and idempotent execution across both human and agent channels.
+The first is **customer trust and brand equity**. When a customer discovers an unapproved €85 charge after telling their assistant to *"find a ride home"*, they will not direct their frustration at the browser vendor or the underlying LLM. They will blame the merchant. A shortcut intended to deliver magical efficiency instead produces customer churn, payment disputes, chargeback fees, and reputational damage.
+
+The second is **regulatory exposure under effect-over-intent doctrine**. Engineering teams often assume that consumer protection liability requires deliberate deceptive intent. But regulatory authorities—including the FTC in the United States and enforcement bodies under the EU Digital Services Act—evaluate unfair practices by their impact on consumer autonomy. Deploying an agent capability that bypasses required disclosures and binds users without informed consent exposes the organization to regulatory enforcement, regardless of how innocent the architectural omission was.
+
+Finally, there is the risk of **accumulating brittle architectural debt**. Rushing to wrap existing client-side callbacks with WebMCP tools creates the illusion of agent-readiness while leaving the underlying systems fragile. As we will explore in Part 4, true agent-readiness cannot be achieved with frontend glue code alone; it demands a robust transaction model that aligns quote versioning, approval records, and idempotent execution across human and automated channels alike.
 
 ## See the difference in a working example
 
-An [accompanying working example](https://github.com/gfilardo/gf-blog-examples) presents two lanes: **what the person sees** and **what the agent does**. Before fare acceptance, the human booking button stays disabled, while the flawed agent route can book. Switch to the corrected service and the same agent request is rejected until approval exists. Each lane shows its actions and result.
+In the [accompanying working example](https://github.com/gfilardo/gf-blog-examples), you can see this dynamic in action. The application provides two side-by-side lanes: what the person sees on screen and what the agent executes via WebMCP. When wired to a naive booking service, the human button remains disabled pending fare acceptance, while the agent route commits the surge fare immediately. Switching to the aligned architecture rejects the agent's shortcut until a valid approval record exists for that specific quote.
 
-The repository’s README links to the ride-booking example and its setup instructions. It uses fictional transactions and scripted tool calls, with no real charges or AI model. It illustrates the missing approval check, rather than predicting how every agent will behave.
+The repository’s README links to the ride-booking example and its setup instructions. It uses fictional transactions and scripted tool calls, with no real charges or AI model, to illustrate the missing approval check clearly.
 
 ## Looking ahead: the trust boundary
 
-There is a final, deeper question: recording a same-origin approval request does not prove that a human, rather than an automated script, made it. Checking that an approval record exists on the server and establishing who legitimately created it are separate responsibilities. 
+Aligning the API check resolves the immediate bypass, but it exposes an even deeper architectural puzzle. Verifying that an approval record exists on the server tells us *that* an approval was registered, but it does not tell us *who* had the legitimate authority to submit it. Did the user personally review the terms on screen? Did an autonomous assistant make the decision within a pre-agreed budget? Or did an untrusted script manufacture the assertion?
 
-The next article examines that fundamental boundary: **who can confirm on the user’s behalf?**
+In the next article, we examine that fundamental boundary: **who can confirm on the user’s behalf?**
 
 ## References and further reading
 
