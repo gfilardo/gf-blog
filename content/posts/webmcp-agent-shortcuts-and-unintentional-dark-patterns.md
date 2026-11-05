@@ -12,10 +12,12 @@ series:
   id: webmcp-agent-ready-web
   title: "WebMCP and the agent-ready web"
   part: 2
+motif:
+  algorithm: supershape
 draft: true
 ---
 
-> In an agent-ready web, **dark patterns** can emerge entirely by accident. When an application exposes a direct WebMCP tool that bypasses the warning banners, price checks, and acceptance steps displayed on screen, the result is an unintentional dark pattern. To the developer, it was just a clean tool wrapper. But to the user holding an unapproved charge, the outcome is indistinguishable from deceptive design: commitment without informed consent.
+> In an agent-ready web, **dark patterns** can emerge entirely by accident. When an application exposes a direct WebMCP tool that bypasses the warning banners, price checks, and acceptance steps displayed on screen, the result is an unintentional dark pattern. To the developer, it was just a clean tool wrapper. But to the user holding an unapproved charge, the outcome is indistinguishable from deceptive design: commitment without informed consent. To the business, it is a fast track to payment disputes, brand damage, and regulatory exposure
 
 A ride-booking website displays a prominent amber warning: high demand is active, surge pricing applies, and the trip home will cost €85 instead of the usual €25. Before the booking button becomes available, the interface insists on an explicit human action: the person must review the price and press **Accept this fare** to acknowledge the surge.
 
