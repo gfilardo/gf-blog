@@ -35,6 +35,16 @@ That architectural difference is safe only if the application enforces its busin
 
 In our ride-booking example, the visual interface requires explicit price acceptance, while the underlying service merely assumes it has already occurred. Disabling a DOM button is an effective visual guide for a human clicking with a mouse, but it does nothing to prevent an agent from invoking the underlying execution callback directly. Crucially, this failure does not depend on a hallucinating model or an invented price. Even when the tool accurately inspects the €85 fare, the failure remains: the system committed funds without verifying that the human consented to that price.
 
+```mermaid The UI requires acceptance, while the flawed API assumes it happened.
+flowchart TD
+    H[Human journey] --> W[Show EUR 85 surge warning]
+    W --> A[Require fare acceptance]
+    A --> B[Enable booking button]
+    B --> API[Flawed booking API]
+    T[WebMCP booking tool] --> API
+    API --> C[Book without checking approval]
+```
+
 ## Friction asymmetry: the decision disappears in the shortcut
 
 I call this **friction asymmetry**: the human interface is engineered with deliberate friction to protect user autonomy, while the agent interface is engineered to eliminate friction for programmatic speed.
@@ -50,16 +60,6 @@ This divergence produces an **illusion of shared context**. When users observe a
 In reality, an in-page tool callback does not inherit DOM-level visual constraints unless explicitly engineered to do so. The agent bypasses the disabled button and triggers the execution callback directly. Sharing a browser tab or an authenticated session establishes co-location, not shared understanding. While the user experiences one coherent application, the underlying architecture exposes two entry points governed by fundamentally different rules.
 
 ## How an unintentional dark pattern emerges
-
-```mermaid The UI requires acceptance, while the flawed API assumes it happened.
-flowchart TD
-    H[Human journey] --> W[Show EUR 85 surge warning]
-    W --> A[Require fare acceptance]
-    A --> B[Enable booking button]
-    B --> API[Flawed booking API]
-    T[WebMCP booking tool] --> API
-    API --> C[Book without checking approval]
-```
 
 In human UX design, dark patterns are typically deliberate: growth teams engineering countdown timers to manufacture false urgency, pre-selecting high-cost insurance add-ons, or burying subscription cancellations behind labyrinthine exit surveys. The term carries strong moral weight because it implies a calculated intent to steer or trap the user.
 
@@ -113,10 +113,21 @@ A natural reaction is to look for a protocol-level fix: why not mark the booking
 
 WebMCP specifically defines the [`consequentialHint`](https://webmachinelearning.github.io/webmcp/#dictdef-toolannotations) annotation (paralleling host-level confirmation policies in MCP when tools perform mutating or destructive operations) to signal that an in-browser capability carries significant real-world consequences. When an agent host encounters this hint, it can pause execution and prompt the user for confirmation. But treating a generic host confirmation dialog as a substitute for application-level acceptance breaks down quickly:
 
-- **Execution permission is not informed consent:** A host prompt asks for permission to run code—typically showing an opaque call like `book_ride(quoteId)`. The host does not know surge pricing is active, that the fare is €85, or what the cancellation rules are. A generic browser modal strips away the rich visual context that made human consent meaningful.
+- **Execution permission is not informed consent:** A host prompt asks for permission to invoke a tool. It may show the fare and cancellation terms if that context is available, but allowing `bookRide({ quoteId })` to run does not by itself establish that the application has recorded acceptance of those terms. A generic confirmation without the material conditions cannot substitute for informed consent.
 - **Hints are advisory, not enforcement boundaries:** Annotations are explicitly hints for host policy, not a security contract. An autonomous agent or automated profile may skip the prompt entirely, and different hosts will handle prompts inconsistently. A website cannot outsource its authorization logic to an external client.
 - **Consent must bind to a specific offer:** A host prompt lives outside the application's transaction state. If dynamic pricing shifts or the quote expires while the dialog is open, a generic "yes" does not protect the user from committing to altered terms. The backend still needs to verify an unexpired approval record for that exact quote version.
 - **The risk of consent theater:** If every transactional tool relies on host confirmation, users face a continuous stream of low-context popups. Users quickly develop prompt fatigue and approve them blindly, destroying the deliberate safety friction built into the visual UI.
+
+```mermaid Permission to invoke a tool does not establish approval of the offer.
+flowchart LR
+    INV[Booking tool invocation] --> H[Gate 1: Host Policy<br/>May this tool run?]
+    H -->|Permitted| APP[Gate 2: Application API<br/>Valid approval for exact offer?]
+    APP -->|Approved| COMMIT[Check conditions and commit]
+    H -.->|Denied| STOP[Stop invocation]
+    APP -.->|Missing| REJ[Reject: offer approval required]
+```
+
+Even after host policy allows the invocation, the application must verify approval for the specific offer. A host confirmation can support that approval workflow, but the permission to run a tool is not itself the approval record.
 
 Annotations remain valuable for helping agents reason about risk and preventing runaway execution. But they support the workflow; they cannot replace domain-level transaction approval. See [Chrome’s annotation guidance](https://developer.chrome.com/docs/ai/webmcp/secure-tools#use_annotation_hints).
 
