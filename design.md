@@ -164,3 +164,22 @@ Every 28 simulation seconds, an external visitor agent enters the airspace along
   - `image-invert-dark` (`#invert-dark`): Inverts line art in dark mode (`filter: invert(0.9) hue-rotate(180deg)`).
   - `image-pixelated` (`#pixelated`): Disables smoothing (`image-rendering: pixelated`) for crisp retro/pixel art.
 
+
+## 7. Architectural Background Walk
+
+The site-wide background uses the supplied arcade photograph in
+`static/assets/arcade-reference.png`. The dark left colonnade, sunlit right
+facade, paving, and diagonal shadows come directly from the photograph.
+
+`static/js/arcade-background.js` projects the photograph onto two walls and a
+floor using the camera calibration in `arcade-geometry.mjs`. Scrolling advances
+the camera; nearby masonry and paving move faster than distant arches. This is
+a restrained photo reprojection, not an endlessly generated environment. Travel
+eases toward a finite distance to preserve the reference's available detail.
+
+The photographic layer stays behind the existing layout. A paper veil protects
+reading contrast, with less opacity in dark mode and a clear header. Portrait
+screens crop around the same vanishing point without stretching the arches.
+Rendering stops when the scroll settles or the tab is hidden. Reduced motion
+keeps the initial view still. Without JavaScript or WebGL, the same photograph
+remains as a static CSS background; printing omits it.
