@@ -230,3 +230,16 @@ main > .eyebrow:first-child { margin-top: 70px; }
 .motif-frame-mark .article-motif { width: 100%; max-width: 120px; height: auto; }
 .motif-frame-micro { min-height: 108px; }
 .motif-caption { font: 11px var(--mono); color: var(--muted); margin-top: 8px; }
+
+/* A quiet walk through an arcade, behind every page of the notebook. */
+body { isolation: isolate; }
+.arcade-background { position: fixed; inset: 0; z-index: -1; pointer-events: none; overflow: hidden; }
+.arcade-canvas { display: block; width: 100%; height: 100%; opacity: .27; }
+/* Keep the architecture at the periphery and a calm paper surface under text. */
+.arcade-background::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--paper) 85%, transparent) 18%, color-mix(in srgb, var(--paper) 96%, transparent) 35%, color-mix(in srgb, var(--paper) 96%, transparent) 68%, color-mix(in srgb, var(--paper) 85%, transparent) 82%, transparent), linear-gradient(var(--paper), transparent 23%, transparent 88%, color-mix(in srgb, var(--paper) 40%, transparent)); }
+@media (prefers-color-scheme: dark) { .arcade-canvas { opacity: .32; } }
+@media (max-width: 760px) {
+  .arcade-canvas { opacity: .18; }
+  .arcade-background::after { background: linear-gradient(90deg, color-mix(in srgb, var(--paper) 35%, transparent), color-mix(in srgb, var(--paper) 92%, transparent) 17%, color-mix(in srgb, var(--paper) 92%, transparent) 83%, color-mix(in srgb, var(--paper) 35%, transparent)); }
+}
+@media print { .arcade-background { display: none; } }
