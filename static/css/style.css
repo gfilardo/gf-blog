@@ -230,17 +230,3 @@ main > .eyebrow:first-child { margin-top: 70px; }
 .motif-frame-mark .article-motif { width: 100%; max-width: 120px; height: auto; }
 .motif-frame-micro { min-height: 108px; }
 .motif-caption { font: 11px var(--mono); color: var(--muted); margin-top: 8px; }
-
-/* The reference photograph becomes a quiet, spatial walk behind the notebook. */
-body { isolation: isolate; }
-.arcade-background { position: fixed; inset: 0; z-index: -1; pointer-events: none; overflow: hidden; opacity: var(--arcade-opacity, .23); background: url('../assets/arcade-reference.png') 32% 71.8% / cover no-repeat; }
-.arcade-canvas { display: block; width: 100%; height: 100%; visibility: hidden; }
-.arcade-ready .arcade-canvas { visibility: visible; }
-/* Keep the photograph present; soften its contrast where the reading sits. */
-.arcade-background::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--paper) 50%, transparent) 20%, color-mix(in srgb, var(--paper) 78%, transparent) 43%, color-mix(in srgb, var(--paper) 78%, transparent) 66%, color-mix(in srgb, var(--paper) 45%, transparent) 84%, transparent), linear-gradient(var(--paper), color-mix(in srgb, var(--paper) 35%, transparent) 16%, transparent 28%); }
-@media (max-width: 760px) {
-  .arcade-background { --arcade-opacity: .18; }
-  .arcade-background::after { background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--paper) 68%, transparent) 22%, color-mix(in srgb, var(--paper) 68%, transparent) 78%, transparent), linear-gradient(var(--paper), transparent 22%); }
-}
-@media (prefers-color-scheme: dark) { .arcade-background { --arcade-opacity: .14; } }
-@media print { .arcade-background { display: none; } }
