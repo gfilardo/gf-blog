@@ -68,7 +68,7 @@ In the next article, we examine how unaligned agent shortcuts can quietly produc
 
 ## An accompanying example
 
-A [working ride-booking example](https://github.com/gfilardo/gf-blog-examples) accompanies the series. It shows a person and an agent approaching the same booking through different interfaces. The repository’s README links to the example and explains how to run it; no real booking or payment takes place.
+A [working ride-booking example](https://github.com/gfilardo/gf-notebook-examples) accompanies the series. It shows a person and an agent approaching the same booking through different interfaces. The repository’s README links to the example and explains how to run it; no real booking or payment takes place.
 
 ## References and further reading
 

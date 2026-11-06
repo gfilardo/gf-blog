@@ -11,7 +11,7 @@ series:
   id: http-query-and-sse
   title: HTTP QUERY in practice
   part: 1
-companion: https://github.com/gfilardo/gf-blog-examples/tree/main/http-query-can-i-just-use-it
+companion: https://github.com/gfilardo/gf-notebook-examples/tree/main/http-query-can-i-just-use-it
 draft: false
 ---
 

@@ -109,7 +109,7 @@ The goal is a reliable connection between the user’s intent and the commitment
 
 ## An accompanying example
 
-An [accompanying working example](https://github.com/gfilardo/gf-blog-examples) shows an application checking approval for a specific ride offer. The repository’s README links to the example and its setup instructions. It demonstrates the approval check; it does not establish that an independent agent has trustworthy authority to approve on someone’s behalf.
+An [accompanying working example](https://github.com/gfilardo/gf-notebook-examples) shows an application checking approval for a specific ride offer. The repository’s README links to the example and its setup instructions. It demonstrates the approval check; it does not establish that an independent agent has trustworthy authority to approve on someone’s behalf.
 
 ## References and further reading
 

@@ -145,7 +145,7 @@ Finally, there is the risk of **accumulating brittle architectural debt**. Rushi
 
 ## See the difference in a working example
 
-In the [accompanying working example](https://github.com/gfilardo/gf-blog-examples), you can see this dynamic in action. The application provides two side-by-side lanes: what the person sees on screen and what the agent executes via WebMCP. When wired to a naive booking service, the human button remains disabled pending fare acceptance, while the agent route commits the surge fare immediately. Switching to the aligned architecture rejects the agent's shortcut until a valid approval record exists for that specific quote.
+In the [accompanying working example](https://github.com/gfilardo/gf-notebook-examples), you can see this dynamic in action. The application provides two side-by-side lanes: what the person sees on screen and what the agent executes via WebMCP. When wired to a naive booking service, the human button remains disabled pending fare acceptance, while the agent route commits the surge fare immediately. Switching to the aligned architecture rejects the agent's shortcut until a valid approval record exists for that specific quote.
 
 The repository’s README links to the ride-booking example and its setup instructions. It uses fictional transactions and scripted tool calls, with no real charges or AI model, to illustrate the missing approval check clearly.
 

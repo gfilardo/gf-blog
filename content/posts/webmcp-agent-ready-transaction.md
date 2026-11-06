@@ -184,7 +184,7 @@ WebMCP makes application capabilities easier for agents to invoke. An agent-read
 
 ## Explore the working example
 
-An [accompanying working example](https://github.com/gfilardo/gf-blog-examples) puts this architecture into a small ride-booking application. Two lanes compare the human acceptance step with the agent’s direct booking request. A switch selects a flawed service that assumes approval or a corrected one that checks it. Additional controls demonstrate changed fares, expiry, revocation and safe retries.
+An [accompanying working example](https://github.com/gfilardo/gf-notebook-examples) puts this architecture into a small ride-booking application. Two lanes compare the human acceptance step with the agent’s direct booking request. A switch selects a flawed service that assumes approval or a corrected one that checks it. Additional controls demonstrate changed fares, expiry, revocation and safe retries.
 
 The repository’s README links to the example, full source and setup instructions. The implementation includes the complete WebMCP tool definitions and automated checks, so the article can keep the code brief. All bookings are fictional; no real payment or AI model is involved. Native browser-agent compatibility remains a separate manual check.
 
