@@ -15,108 +15,109 @@ series:
 draft: true
 ---
 
-“Get me a ride home” is a clear request about an outcome.
+> When an AI assistant encounters an €85 surge fare, can it confirm the purchase on the user's behalf? If an agent must stop and prompt the user for every tool call, autonomy dies of prompt fatigue. But if the website accepts an agent's conversational claim of approval, it invites prompt injection and unauthorized spending. The answer to who can confirm on the user's behalf is never "the agent because it felt like it." In sound architecture, **only three entities can legitimately confirm**: the user directly, the application backend via stored policy envelopes, or a formally authorized delegate presenting cryptographic proof.
 
-It is less clear about spending €85, accepting a cancellation fee, or choosing a premium vehicle.
+“Get me a ride home” is a clear statement of a desired outcome. It tells an assistant where the user wants to end up, but it says nothing about spending €85, accepting a non-refundable cancellation fee, or selecting a premium vehicle.
 
-An agent must translate the request into specific decisions. A website accepting those decisions needs to know which ones the user authorized the agent to make.
+To carry out that instruction, an agent must translate high-level intent into concrete commitments. When those commitments involve real-world consequences—spending money, signing contracts, or altering persistent data—the application receiving the request faces a fundamental trust boundary: **who holds the legitimate authority to confirm on the user’s behalf?**
 
-This is where agent-ready products encounter a boundary that an ordinary permission check cannot fully describe.
+## The short answer: an agent cannot merely assert authority
 
-## Three different questions
-```mermaid Signed in: identity established. Allowed: account may book. Covered: valid approval or delegated authority covers this ride.
-flowchart TD
-    R[Request to book an EUR 85 ride] --> I{Signed in?}
-    I -->|No| X[Reject]
-    I -->|Yes| P{Allowed?}
-    P -->|No| X
-    P -->|Yes| A{Covered?}
-    A -->|No| C[Obtain appropriate approval]
-    A -->|Yes| V[Continue transaction checks]
+The short answer is that **an AI agent cannot confirm on the user's behalf simply by claiming it has permission.**
+
+An incoming payload containing `approved: true` or a conversational assertion (*“The user told me to book it”*) is not an authorization credential. An LLM is a probabilistic reasoning engine, not a security principal. It is vulnerable to prompt injection from untrusted web pages, model hallucinations, and misinterpretations of user intent. A website cannot outsource its fiduciary or contractual responsibility to an external model's conversational claims.
+
+In traditional web development, applications collapsed identity, permissions, and transaction consent into a single check. If an HTTP request carried a valid session cookie, the backend assumed a human was sitting in front of the browser, had reviewed the form, and intended to submit it. 
+
+With WebMCP, that assumption collapses. An in-browser agent shares the user's authenticated session, but its actions represent programmatic interpretations. Reasoning about delegation safely requires separating three distinct questions:
+
+```mermaid Three distinct security questions: authentication, authorization, and transaction approval.
+flowchart LR
+    REQ[Request to book ride] --> AUTH[1. Authentication<br/>Who is the caller?]
+    AUTH -->|Valid Identity| PERM[2. Authorization<br/>May this account book rides?]
+    PERM -->|Allowed| TX[3. Transaction Approval<br/>Did user agree to this EUR 85 offer?]
+    TX -->|Approved| COMMIT[Commit Booking]
+    AUTH -.->|Invalid| REJ1[Reject: Unauthenticated]
+    PERM -.->|Denied| REJ2[Reject: Forbidden]
+    TX -.->|Missing| REJ3[Reject: Approval Required]
 ```
 
+1. **Authentication** establishes *who* is operating the session (a valid account credential).
+2. **Authorization** establishes *what* that identity is generally permitted to do (the account has an active card and is allowed to book rides).
+3. **Transaction approval** establishes whether *this specific commitment*—with its exact price, version, and material conditions—was deliberately authorized.
 
-Authentication establishes who is using the application.
+As [OWASP’s Transaction Authorization guidance](https://cheatsheetseries.owasp.org/cheatsheets/Transaction_Authorization_Cheat_Sheet.html) emphasizes, transaction authorization is fundamentally distinct from login. A user may be securely logged in and authorized to hail rides, but neither fact establishes approval for an €85 transaction.
 
-Authorization establishes what that identity is permitted to do.
+## Only three entities can legitimately confirm
 
-Transaction approval establishes whether this particular operation falls within the user’s decision or delegated authority. [OWASP’s Transaction Authorization Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Transaction_Authorization_Cheat_Sheet.html) explicitly distinguishes authentication from transaction authorization and recommends verification of significant transaction data.
+If an AI agent cannot confirm by conversational assertion, who *can* confirm? 
 
-A user may be signed in, permitted to book rides, and have a valid payment method. None of those facts alone establishes approval for an €85 journey.
+In robust software architecture, **there are strictly three entities that can ever legitimately confirm a transaction**:
 
-A human confirmation view traditionally presented a specific offer and collected an action associated with it. A backend should already have checked the relevant approval. Agent interaction adds another participant interpreting what the user wants and deciding when their authority is sufficient.
+1. **The User Themselves (Direct Human Gating):**  
+   The human confirms the transaction directly through an application-controlled channel—either an in-page UI action or a hardware-backed biometric prompt via **WebAuthn and Passkeys**. Here, strictly speaking, *no delegation takes place*: the human provides fresh, non-delegated proof of physical presence.
+2. **The Application Backend (Pre-Delegated Policy Engine):**  
+   The application itself confirms on the user's behalf, but only by evaluating the agent's request against **stored, user-defined policy envelopes** (e.g., *"Auto-approve rides home up to €40; escalate anything higher"*). The agent does not approve the ride; it merely proposes an offer that the backend validates against pre-authorized rules.
+3. **A Formally Authorized Delegate (Cryptographic Proof, Not Assertion):**  
+   An external agent *can* confirm on the user's behalf, but only if it presents a cryptographically signed capability grant minted by a trusted authorization server (such as **OAuth 2.0 Rich Authorization Requests / [RFC 9396](https://datatracker.ietf.org/doc/html/rfc9396)**). The receiving service trusts the cryptographic signature and the explicit parameter bounds embedded in the token—never the agent's prose.
 
-## Delegation can be useful and bounded
-```mermaid Proposed authority model. WebMCP does not establish or verify this delegation.
-flowchart TD
-    G[User goal: get me home] --> D[Established delegation: rides up to EUR 40]
-    D --> O[Agent obtains an offer]
-    O --> S{In scope?}
-    S -->|Yes| P[Proceed within delegated authority]
-    S -->|No: EUR 85| U[Request approval for this offer]
-    U --> A{Approved?}
-    A -->|Yes| B[Submit booking]
-    A -->|No| N[Do not book]
-    P --> B
-```
+**There is no fourth option.** An AI assistant cannot manufacture authority on the fly, and a backend cannot accept conversational claims of consent. Every safe delegation architecture maps back to one of these three trust anchors.
 
+## The delegation spectrum: four architectural patterns
 
-Requiring a confirmation for every action would limit the value of an assistant.
+Systems designers implement these three entities across four concrete architectural patterns, trading cognitive friction against implementation complexity:
 
-A user might reasonably permit rides home up to €40, using a specified payment method and excluding premium vehicles. Within that scope, the agent can make a useful decision without interrupting.
+### 1. Two-Phase Staging & Deferred Sign-Off (Draft $\rightarrow$ Commit)
+The agent exercises full autonomy during search, filtering, and quote negotiation, but its capability is strictly non-committal: `stageBooking({ quoteId })`. The backend creates a reserved, uncommitted draft and returns an offer reference. The final commitment is handed back to the human for a single, focused review—either in the browser tab or via an out-of-band push notification. Pairing this review with **WebAuthn** provides cryptographic proof of human physical presence without repetitive passwords.
 
-An €85 quote falls outside the authority.
+### 2. Standing Policy & Threshold Envelopes (Bounded Pre-Approval)
+The user configures explicit spending envelopes in their account profile (*"Commutes up to €40 are pre-approved"*). When the agent submits a booking request, the backend policy engine evaluates the offer. A €32 ride proceeds autonomously without human interruption; an €85 surge fare triggers an immediate `APPROVAL_REQUIRED` rejection, prompting the agent to escalate the difference to the user. This enforces the principle of [least privilege](https://cheatsheetseries.owasp.org/cheatsheets/Authorization_Cheat_Sheet.html#enforce-least-privileges) on server-side business logic.
 
-The important design work is making the boundary explicit enough to evaluate. “Use reasonable judgment” may be useful conversational context, but it leaves the application with little concrete evidence about the transaction it should accept.
+### 3. Scoped Capability Delegation (OAuth RAR & Token Exchange)
+When agents operate across independent services (e.g., an assistant coordinating across airlines, hotels, and ground transport), applications cannot rely on shared database flags. Instead, an authorization server issues fine-grained, cryptographically signed capability tokens using **OAuth 2.0 RAR ([RFC 9396](https://datatracker.ietf.org/doc/html/rfc9396))** and **Token Exchange ([RFC 8693](https://datatracker.ietf.org/doc/html/rfc8693))**. The token explicitly bounds the agent's authority (e.g., `type: "ride_booking"`, `max_amount: 40.00`, `currency: "EUR"`). The booking service independently validates the signature and verifies that the transaction parameters stay within bounds.
 
-Different operations need different boundaries. A shopping assistant might have a total budget. A scheduling assistant might be allowed to move internal meetings but not cancel customer appointments.
+### 4. Cryptographic Intent Binding (Signed Offer Payloads)
+For high-assurance, treasury, or legal workflows where tampering or non-repudiation is paramount, the server generates a canonical hash of the transaction parameters (offer ID, itemized fees, currency, expiration). The approving entity signs this payload with an asymmetric private key. The backend verifies the digital signature before execution, guaranteeing that neither an intermediate proxy nor a compromised agent runtime altered the offer terms.
 
-The application needs a policy appropriate to its domain. This follows the established [least-privilege principle](https://cheatsheetseries.owasp.org/cheatsheets/Authorization_Cheat_Sheet.html#enforce-least-privileges); the budget and ride restrictions here are proposed domain rules, not WebMCP-defined permission scopes.
+---
 
-## Whose assertion can the application trust?
+### Architectural Trade-Off Matrix
 
-An agent may report that the user approved the purchase. That creates a trust question: what makes the assertion acceptable to the website?
+| Pattern | Who Confirms | Trust Anchor | User Friction | Best Suited For |
+| :--- | :--- | :--- | :--- | :--- |
+| **1. Staged Preparation** | User | Human presence (UI or WebAuthn / Passkeys) | **Low–Medium** (1 tap at the end) | High-value, irreversible actions (flights, wire transfers) |
+| **2. Threshold Envelopes** | Application Backend | Backend policy engine & stored rules | **Zero** (Interruption-free within bounds) | Frequent, routine consumer actions (daily rides, groceries) |
+| **3. Capability Tokens** | Authorized Delegate | Authorization server (OAuth RAR / RFC 9396) | **Low** (Authorized once per session) | Cross-origin ecosystems and multi-service platforms |
+| **4. Cryptographic Binding** | User or Authorized Delegate | Asymmetric cryptography (PKI / Keypairs) | **Medium** (Signing prompt per transaction) | High-assurance finance, contracts, non-repudiation |
 
-A site-controlled confirmation flow can record approval directly. An established delegated-authority arrangement could allow decisions within a defined scope. Accepting an external agent’s approval would require an explicit trust arrangement and a verifiable representation of that authority.
+*(Note: Technical authorization is often paired with operational risk backstops—such as spending velocity limits, temporary authorization holds, and automated dispute resolution. These operational buffers manage financial risk, but they do not replace authorization architecture.)*
 
-These are architectural choices, not capabilities automatically supplied by a tool annotation.
+## Consent must have an object
 
-The current WebMCP draft recognizes broader questions around agent identity, permissions, and delegation, while leaving important agent-security responsibilities outside its scope. See its [agent baseline and responsibility boundaries](https://webmachinelearning.github.io/webmcp/#agent-baseline-capabilities). The draft distinguishes browser-session capabilities from the agent’s own security responsibilities; it does not define a universal proof of delegated consent.
+Whichever pattern an application adopts, delegation cannot exist as a floating abstraction. Approval must bind to an immutable, versioned **object**:
 
-## Consent needs an object
+- **Offer Identity & Version:** Approval binds to a specific quote record. If network delays or dynamic pricing shift the fare from €85 to €95, prior approval cannot silently transfer to the higher price.
+- **Explicit Material Terms:** Price caps, service classes, currency, and cancellation penalties must be explicitly enumerated.
+- **Strict Temporal Expiry:** Approvals must carry a short time-to-live (TTL). Acceptance granted at 18:00 must not remain usable at 22:00.
+- **Revocability:** A standing delegation or capability token must have an instant revocation path on the server.
 
-A generic “approved” flag loses essential information.
+As [OWASP transaction guidance](https://cheatsheetseries.owasp.org/cheatsheets/Transaction_Authorization_Cheat_Sheet.html) notes, binding authorization to immutable transaction data is the only reliable defense against parameter manipulation.
 
-Approval should refer to something: an offer, an action, or a bounded class of actions. Its useful lifetime and material conditions should be clear. OWASP’s [transaction-authorization guidance](https://cheatsheetseries.owasp.org/cheatsheets/Transaction_Authorization_Cheat_Sheet.html) covers server-side enforcement, protection against changes to transaction data and limited authorization lifetimes. Applying those principles to a ride offer is the architecture proposed here.
+## Looking ahead: building an agent-ready transaction
 
-In the ride example, approving a fixed €85 quote should not silently become approval for €95. A different policy might permit a capped final fare, but the scope of that policy must be explicit.
+Deciding who can confirm on the user's behalf is ultimately a product decision. Add too much friction, and the assistant becomes an annoying toy. Infer too much authority, and the application creates accidental dark patterns and unauthorized commitments.
 
-Withdrawal matters too. A standing delegation that has been revoked should not remain usable merely because an agent retained a reference to it.
-
-These concerns predate WebMCP. Agentic interaction gives them a new operational setting: the application, the agent provider, and the user may hold different parts of the context needed to assess an action.
-
-## The product decision behind the architecture
-
-Teams must decide which commitments may be delegated, under which conditions, and what requires renewed participation from the user.
-
-Those decisions affect the product experience as much as its security model. Interrupt too often and the assistant becomes tedious. Infer too much and the product accepts actions the user did not intend.
-
-A useful starting point is to identify the smallest scope that enables the desired workflow. Make it understandable to the user, enforceable by the application, and inspectable after execution.
-
-For a ride, that might mean authority for one quoted journey or a clearly bounded recurring policy.
-
-The goal is a reliable connection between the user’s intent and the commitment the system ultimately makes.
-
-## An accompanying example
-
-An [accompanying working example](https://github.com/gfilardo/gf-notebook-examples) shows an application checking approval for a specific ride offer. The repository’s README links to the example and its setup instructions. It demonstrates the approval check; it does not establish that an independent agent has trustworthy authority to approve on someone’s behalf.
+The engineering challenge is building a verifiable bridge between human intent and programmatic execution. In the final article of this series, we turn theory into code. We will build a complete reference architecture based on **Pattern 1 (Two-Phase Staged Preparation & Offer Binding)**, using WebMCP's `registerTool()` API, typed input schemas (`offerId`, `approvalId`, `attemptId`), and an idempotent backend capable of handling retries safely.
 
 ## References and further reading
 
-- [OWASP: Transaction Authorization](https://cheatsheetseries.owasp.org/cheatsheets/Transaction_Authorization_Cheat_Sheet.html) — significant transaction data, separation from login, server enforcement, expiry and transaction changes.
-- [OWASP: Authorization](https://cheatsheetseries.owasp.org/cheatsheets/Authorization_Cheat_Sheet.html) — least privilege and per-request checks.
-- [WebMCP: Agent baseline capabilities](https://webmachinelearning.github.io/webmcp/#agent-baseline-capabilities) — session inheritance and the boundary of the specification’s protections.
-- [WebMCP: Consequential annotation](https://webmachinelearning.github.io/webmcp/#mitigation-consequential-annotation) — a signal for agent-host confirmation policy, not an approval credential issued to the application.
-- [Chrome: WebMCP tool security](https://developer.chrome.com/docs/ai/webmcp/secure-tools) — implementation guidance for sites exposing actions to agents.
+- [OWASP: Transaction Authorization Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Transaction_Authorization_Cheat_Sheet.html) — server-side enforcement and binding approval to significant transaction data.
+- [OWASP: Authorization Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Authorization_Cheat_Sheet.html) — least privilege and request-time validation.
+- [RFC 9396: OAuth 2.0 Rich Authorization Requests (RAR)](https://datatracker.ietf.org/doc/html/rfc9396) — fine-grained, structured authorization for delegated capabilities.
+- [RFC 8693: OAuth 2.0 Token Exchange](https://datatracker.ietf.org/doc/html/rfc8693) — delegating and transforming security tokens across autonomous systems.
+- [W3C Web Authentication (WebAuthn)](https://www.w3.org/TR/webauthn-2/) — cryptographic proof of user presence.
+- [WebMCP Specification: Agent Baseline Capabilities](https://webmachinelearning.github.io/webmcp/#agent-baseline-capabilities) — session inheritance and security boundaries.
+- [Chrome: Secure WebMCP Tools](https://developer.chrome.com/docs/ai/webmcp/secure-tools) — security guidelines for exposing tools to browser agents.
+- [Working Example Repository](https://github.com/gfilardo/gf-notebook-examples) — runnable code contrasting naive tool shortcuts against verified transaction approval.
 
-*Documentation checked on 30 October 2026. WebMCP is evolving; specification text, browser implementation and agent-host behavior should be checked separately.*
+*Documentation checked on 30 October 2026. WebMCP is evolving; specification text, browser implementation, and agent-host behavior should be checked separately.*
