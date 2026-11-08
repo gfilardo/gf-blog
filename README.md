@@ -155,10 +155,10 @@ The repository includes a three-part example:
 ### Preview and release a draft part
 
 Set `draft: true` on an upcoming article and assign its series and part number.
-**This announces its title and position on published sibling articles.** Its body
-is available at its preview URL, and it is excluded from public article indexes, tag archives,
-RSS, and the sitemap. Keep a draft out of the series until its title is ready to
-announce. An entirely draft series appears only in previews.
+**This announces its title and position on published sibling articles as an unlinked “Coming soon” entry.**
+Its body is available at its preview URL, and it is excluded from public article indexes, tag archives,
+RSS, and the sitemap. To keep an upcoming part completely hidden from published series navigation until
+its title is ready to announce, set `unlisted: true`. An entirely draft series appears only in previews.
 
 To check your changes locally:
 
@@ -172,24 +172,30 @@ Open a published member, such as
 Use your configured port and base path if different. If the preview server is
 already running, only rebuild and refresh; it does not rebuild automatically.
 
-To release a part, change `draft: true` to `draft: false`, set `date` to the intended
+To release a part, change `draft: true` to `draft: false` (and ensure `unlisted: false` or omitted), set `date` to the intended
 publication date, and rebuild. The contents lists and previous/next links update
 automatically. A future date alone does **not** keep an article unpublished; use
-`draft: true` until it is ready. Building updates local output; publication follows
+`draft: true` or `unlisted: true` until it is ready. Building updates local output; publication follows
 the repository's deployment workflow.
 
-### Draft previews
+### Draft previews and unlisted articles
 
-`draft: true` is the only flag needed to preview an unfinished article. Draft
-articles are generated at `/preview/<slug>/` and listed on the unlisted
-`/preview/` page. These pages carry `noindex, nofollow` and cannot be added to
-site navigation. Drafts stay out of the public home page, tag archives, RSS,
-and sitemap; their tags do not create archives.
+`draft: true` previews an unfinished article. Draft articles are generated at
+`/preview/<slug>/` and listed on the `/preview/` page. These pages carry
+`noindex, nofollow` and cannot be added to site navigation. Drafts stay out of
+the public home page, tag archives, RSS, and sitemap; their tags do not create archives.
 
 Public series lists show draft parts as unlinked “Coming soon” entries. Inside
 a draft preview, series navigation can link to other draft previews and
-published parts. Setting `draft: false` publishes the article at `/posts/<slug>/`
-and removes its old preview page on the next build. The `/preview/` page slug
+published parts.
+
+To keep an article hidden from public series lists as well as the home page and tag archives,
+set `unlisted: true`. Unlisted articles do not appear in published series navigation or the
+home page articles list, but remain accessible at `/preview/<slug>/` and appear on the `/preview/`
+index page.
+
+Setting `draft: false` (and omitting or setting `unlisted: false`) publishes the article at
+`/posts/<slug>/` and removes its old preview page on the next build. The `/preview/` page slug
 is reserved. Standalone page drafts remain excluded from output.
 
 Preview pages are unlisted, not access-controlled: anyone with the URL can read
