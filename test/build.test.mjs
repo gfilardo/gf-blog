@@ -24,7 +24,7 @@ async function fixture(t) {
   return dir;
 }
 test('metadata schemas and source diagnostics', () => {
-  for (const extra of ['date: "2026-02-30"', 'titel: typo', 'tags: [one, one]', 'draft: yes', 'slug: ../bad', 'updated: "2020-01-01"']) {
+  for (const extra of ['date: "2026-02-30"', 'titel: typo', 'tags: [one, one]', 'draft: yes', 'unlisted: yes', 'slug: ../bad', 'updated: "2020-01-01"']) {
     assert.throws(() => parseContent('article.md', article(extra), 'post', config), /article.md:/);
   }
   assert.throws(() => parseContent('article.md', article().replace('2026-10-17', '2026-02-30'), 'post', config), /date/);
@@ -202,6 +202,46 @@ test('series conflicts fail safely, including draft conflicts; gaps and single p
   await assert.rejects(build(dir), /two.md: series architecture title differs/);
 });
 
+test('unlisted articles stay out of published series, home page and tag archives, but remain available in preview', async t => {
+  const dir = await fixture(t);
+  const seriesUnlistedArticle = (slug, part, unlisted = true) => article(
+    `unlisted: ${unlisted}\nseries:\n  id: architecture\n  title: "Architecture & trade-offs"\n  part: ${part}`,
+    'UNLISTED BODY'
+  ).replace('slug: example', `slug: ${slug}`).replace('title: Example', `title: ${slug}`);
+
+  await writeFile(path.join(dir, 'content/posts/first.md'), seriesArticle('first', 1, false));
+  await writeFile(path.join(dir, 'content/posts/secret.md'), seriesUnlistedArticle('secret', 2, true));
+  await writeFile(path.join(dir, 'content/posts/last.md'), seriesArticle('last', 3, false));
+
+  const files = await build(dir, { basePath: '/blog' });
+
+  // Home page does not list unlisted article
+  assert.ok(!files.get('index.html').includes('secret'));
+
+  // Published article (first) shows only published sibling, completely omitting unlisted part 2
+  const firstHtml = files.get('posts/first/index.html');
+  assert.ok(!firstHtml.includes('secret'));
+  assert.ok(!firstHtml.includes('Coming soon'));
+  assert.match(firstHtml, /value="1" aria-current="page"/);
+  assert.match(firstHtml, /value="3"/);
+  assert.match(firstHtml, /rel="next" href="\/blog\/posts\/last\/"/);
+
+  // Unlisted article is generated in preview, not published routes
+  assert.ok(!files.has('posts/secret/index.html'));
+  assert.ok(files.has('preview/secret/index.html'));
+  assert.match(files.get('preview/secret/index.html'), /UNLISTED BODY/);
+  assert.match(files.get('preview/secret/index.html'), /noindex, nofollow/);
+
+  // Unlisted article appears in preview collection
+  assert.match(files.get('preview/index.html'), /href="\/blog\/preview\/secret\/"/);
+
+  // In preview series navigation, all parts are visible
+  const previewHtml = files.get('preview/secret/index.html');
+  assert.match(previewHtml, /value="1"/);
+  assert.match(previewHtml, /value="2" aria-current="page"/);
+  assert.match(previewHtml, /value="3"/);
+});
+
 test('tags preserve display spelling and derive stable lowercase URLs everywhere', async t => {
   const dir = await fixture(t);
   await writeFile(path.join(dir, 'content/posts/tagged.md'), article('tags: [API_design, Domain-driven_design]'));
@@ -309,11 +349,12 @@ test('component layouts contain Markdown blocks with image-compatible sizes', ()
 });
 
 test('callouts render semantic accessible asides from both container and blockquote alerts', () => {
+  // Titleless containers by default when no title is specified
   for (const type of ['tip', 'note', 'warning', 'caution', 'important', 'info']) {
     const expected = type === 'info' ? 'note' : type;
     const fromContainer = parseContent('callout.md', article('', `::: ${type}\n\nHelpful advice.\n\n:::`), 'post', config).body;
     assert.match(fromContainer, new RegExp(`<aside class="callout callout-${expected}" role="note">`));
-    assert.match(fromContainer, /<div class="callout-title">/);
+    assert.doesNotMatch(fromContainer, /<div class="callout-title">/);
     assert.match(fromContainer, /<p>Helpful advice\.<\/p>\n<\/aside>/);
   }
 
@@ -323,13 +364,25 @@ test('callouts render semantic accessible asides from both container and blockqu
   assert.match(custom, /<div class="callout-title">.*Double-spending hazard<\/div>/);
   assert.match(custom, /<p>Must expire\.<\/p>/);
 
-  // GitHub alert blockquotes
+  // GitHub alert blockquotes: default title
   for (const type of ['TIP', 'NOTE', 'WARNING', 'CAUTION', 'IMPORTANT']) {
     const fromAlert = parseContent('callout.md', article('', `> [!${type}]\n> Alert message.\n`), 'post', config).body;
     assert.match(fromAlert, new RegExp(`<aside class="callout callout-${type.toLowerCase()}" role="note">`));
     assert.match(fromAlert, /<div class="callout-title">/);
     assert.match(fromAlert, /<p>Alert message\.<\/p>\n<\/aside>/);
   }
+
+  // GitHub alert blockquotes: titleless via '-'
+  const alertNoTitle = parseContent('callout.md', article('', '> [!NOTE -]\n> Quiet alert without title.\n'), 'post', config).body;
+  assert.match(alertNoTitle, /<aside class="callout callout-note" role="note">/);
+  assert.doesNotMatch(alertNoTitle, /<div class="callout-title">/);
+  assert.match(alertNoTitle, /<p>Quiet alert without title\.<\/p>/);
+
+  // GitHub alert blockquotes: custom title
+  const alertCustomTitle = parseContent('callout.md', article('', '> [!WARNING Replay risk]\n> Check nonce.\n'), 'post', config).body;
+  assert.match(alertCustomTitle, /<aside class="callout callout-warning" role="note">/);
+  assert.match(alertCustomTitle, /<div class="callout-title">.*Replay risk<\/div>/);
+  assert.match(alertCustomTitle, /<p>Check nonce\.<\/p>/);
 
   // Regular blockquote remains unmodified
   const normalQuote = parseContent('quote.md', article('', '> Just an ordinary quote.\n'), 'post', config).body;

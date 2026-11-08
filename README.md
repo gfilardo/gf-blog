@@ -513,7 +513,7 @@ the build with a source filename.
 
 #### Callouts and admonitions
 
-Authors can highlight tips, notes, warnings, cautions, and architectural invariants using either container syntax (`::: <type> [custom title]`) or standard GitHub-style blockquote alerts (`> [!NOTE]`):
+Authors can highlight tips, notes, warnings, cautions, and architectural invariants using either container syntax (`::: <type> [custom title]`) or standard GitHub-style blockquote alerts (`> [!NOTE]`). Callouts should be used very sparingly: in long-form essays, prose and italics carry the argument, while callout boxes are reserved strictly for rare, high-consequence operational hazards, breaking migrations, or external safety boundaries.
 
 - `::: note` / `::: info`: General background context or explanatory notes.
 - `::: tip`: Best practices, optimizations, or helpful recommendations.
@@ -521,7 +521,7 @@ Authors can highlight tips, notes, warnings, cautions, and architectural invaria
 - `::: warning`: Warnings about security hazards, double spending, or operational risk.
 - `::: caution`: High-risk warnings such as permanent key loss or destructive actions.
 
-Custom titles can be appended to container callouts (e.g. `::: warning Double-spending hazard`). GitHub-style alerts (`> [!NOTE]`, `> [!TIP]`, `> [!IMPORTANT]`, `> [!WARNING]`, `> [!CAUTION]`) automatically map to the same accessible HTML structure:
+Container callouts without a title (e.g. `::: note` or `::: important`) render as quiet, title-less asides without an alert header. Custom editorial titles can be appended to containers (e.g. `::: warning Double-spending hazard`) or blockquotes (`> [!WARNING Double-spending hazard]`). Passing `-` in blockquotes suppresses the title (`> [!NOTE -]`). When a title is present, it renders with an inline icon:
 
 ```html
 <aside class="callout callout-<type>" role="note">
@@ -529,6 +529,7 @@ Custom titles can be appended to container callouts (e.g. `::: warning Double-sp
   <p>Message</p>
 </aside>
 ```
+When title-less, the `<div class="callout-title">` is omitted entirely, rendering as a clean typographical aside.
 
 Only article tags generate archives; each archive uses the same ordering as the home page.
 
@@ -579,6 +580,7 @@ a crash occurred during replacement, recover the previous output from a
 - **Generalized interactive sketch and tool embeds**: Implement a generic embedding primitive using HTML `<object>` or sandboxed `<iframe>` elements to support both internal project sketches (e.g., HTML/Canvas/WebGL experiments authored inside the repository) and external embeds (e.g., CodePen, ShaderToy). Links with an `#embed` fragment or specialized directive can transform into responsive, styled enclosures with native fallback links.
 - **Client-side static search (e.g., FlexSearch)**: Once the publication accumulates enough articles to warrant indexing, generate a lightweight search index manifest at build time and integrate a zero-dependency, client-side search solution like FlexSearch. This keeps full-text search instant, private, and deterministic without adding runtime server dependencies or third-party tracking services.
 - **Deterministic geometric article identifiers (abstract generative sigils)**: Abstract, code-driven geometric motifs generated deterministically from article slugs and dated algorithm epochs. Implemented in `src/motif.mjs` and `static/js/motif/` as 100% inline SVG line work (Truchet circuits, Guilloché rosettes, recursive subdivision lattices, Gielis supershapes, and elementary cellular automata) parameterized by design tokens (`var(--line)`, `var(--muted)`, `var(--accent)`, `var(--surface)`). Deployed across three adaptive canvas scales: Hero Friezes ($360 \times 80\text{px}$) on reading pages, Compact Marks ($120 \times 120\text{px}$) in the `/motifs/` interactive gallery, and List Marks ($44 \times 44\text{px}$) embedded in the typographic ledger. Future iterations explore explicit optical sizing branches (`form: 'micro'`) to prune internal cuts at small display resolutions.
+- **Paragraph run-in glyphs for literary admonitions**: As a lightweight alternative to full `<aside class="callout">` containers for reflective essays, support paragraph-start run-in glyphs (e.g. `::glyph warning` or `{.warning-glyph}`). Instead of boxing off paragraphs (which interrupts the narrative continuum and can devalue reflective essays into software reference sheets), run-in glyphs prepend a quiet, baseline-aligned monochrome SVG icon in `var(--accent)` or `var(--muted)` directly into the paragraph with italicized lead text, honoring literary flow while providing a subtle visual anchor for skimmers.
 
 ## Companion examples
 

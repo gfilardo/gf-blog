@@ -118,7 +118,7 @@ export function resolveMotifParameters(doc, algorithms = ALGORITHMS) {
 
   // Evaluate date epoch
   // Draft previews without date or future dates get access to the latest epoch
-  const effectiveDate = (doc.draft && (!doc.date || doc.date > '2026-11-02'))
+  const effectiveDate = ((doc.draft || doc.unlisted) && (!doc.date || doc.date > '2026-11-02'))
     ? '9999-12-31'
     : (doc.date || '9999-12-31');
 

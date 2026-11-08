@@ -158,11 +158,12 @@ export function parseContent(source, raw, kind, site) {
       const firstChild = inline.children[0];
       if (firstChild.type !== 'text') continue;
 
-      const matchAlert = /^\[!(NOTE|TIP|IMPORTANT|WARNING|CAUTION|INFO)\](?:\s*\n?)?(.*)$/is.exec(firstChild.content);
+      const matchAlert = /^\[!(NOTE|TIP|IMPORTANT|WARNING|CAUTION|INFO)(?:\s+([^\n\]]*))?\](?:\s*\n?)?(.*)$/is.exec(firstChild.content);
       if (!matchAlert) continue;
 
       const type = matchAlert[1].toLowerCase() === 'info' ? 'note' : matchAlert[1].toLowerCase();
-      const remainder = matchAlert[2] || '';
+      const customTitle = matchAlert[2] ? matchAlert[2].trim() : null;
+      const remainder = matchAlert[3] || '';
       if (remainder.trim()) {
         firstChild.content = remainder.trimStart();
       } else {
@@ -190,10 +191,12 @@ export function parseContent(source, raw, kind, site) {
         }
       }
 
-      const titleText = type[0].toUpperCase() + type.slice(1);
-      const titleToken = new tokens[i].constructor('html_block', '', 0);
-      titleToken.content = `<div class="callout-title">${CALLOUT_ICONS[type] || ''} ${titleText}</div>\n`;
-      tokens.splice(i + 1, 0, titleToken);
+      const title = (customTitle === '-' || customTitle === 'none') ? null : (customTitle || type[0].toUpperCase() + type.slice(1));
+      if (title) {
+        const titleToken = new tokens[i].constructor('html_block', '', 0);
+        titleToken.content = `<div class="callout-title">${CALLOUT_ICONS[type] || ''} ${title}</div>\n`;
+        tokens.splice(i + 1, 0, titleToken);
+      }
     }
 
     const visit = list => {
@@ -222,7 +225,7 @@ export function parseContent(source, raw, kind, site) {
     };
     visit(tokens);
     const route = kind === 'post' ? `/posts/${data.slug}/` : `/${data.slug}/`;
-    return { date: null, updated: null, draft: false, tags: [], ...data, source, kind, route, url: urls(site).local(route), body: md.renderer.render(tokens, md.options, {}) };
+    return { date: null, updated: null, draft: false, unlisted: false, tags: [], ...data, source, kind, route, url: urls(site).local(route), body: md.renderer.render(tokens, md.options, {}) };
   } catch (error) {
     throw new Error(`${source}: ${error.message}`, { cause: error });
   }

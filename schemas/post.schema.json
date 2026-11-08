@@ -32,6 +32,9 @@
     "draft": {
       "type": "boolean"
     },
+    "unlisted": {
+      "type": "boolean"
+    },
     "tags": {
       "type": "array",
       "uniqueItems": true,

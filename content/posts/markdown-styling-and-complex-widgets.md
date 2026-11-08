@@ -11,7 +11,7 @@ series:
   id: this-blog
   title: This blog
   part: 2
-draft: false
+draft: true
 ---
 
 Markdown was born with an elegant, focused mission: make plain-text writing easy to read, easy to write, and convertible into valid HTML. For linear essays composed of paragraphs, blockquotes, code snippets, and ordered lists, the original CommonMark syntax remains unbeatable.
@@ -189,7 +189,7 @@ Does it make sense to support both? **Yes, because they optimize for two differe
 
 ### Container callouts for rich, structured asides
 
-When an aside requires an explicit custom title, multiple paragraphs, a numbered checklist, or a nested code snippet, container syntax is far more natural:
+When an aside requires multiple paragraphs, a numbered checklist, or a nested code snippet, container syntax is far more natural:
 
 ```markdown
 ::: warning Double-spending hazard
@@ -204,6 +204,30 @@ Replay attacks can exploit eventual-consistency windows if ordering is loose.
 
 Container fences avoid having to prefix every single line with `>` markers, making multi-line and multi-block drafting friction-free.
 
+#### Designed for essays, not appliance manuals
+
+Most documentation frameworks auto-inject loud, all-caps banners like **IMPORTANT** or **NOTE** at the top of every callout. In an architectural essay or reflective piece, those banners shatter the authorial voice—they patronize the reader and make the publication feel like a software user manual.
+
+Furthermore, **callouts must be used with extreme restraint**. In reflective, long-form writing, prose and italics carry the argument. Boxing off paragraphs every few sections fragments the narrative continuum and devalues an essay into a software reference sheet. Callouts are reserved very sparingly—strictly for genuine, high-consequence operational hazards, breaking migration traps, or critical invariants that sit outside the narrative flow. (For lighter cues that avoid physical box barriers altogether, a planned enhancement explores paragraph run-in glyphs that prepend a monochrome mark directly to the text).
+
+To preserve the contemplative rhythm of essay reading, **containers are title-less by default**. If you omit the title string:
+
+```markdown
+::: important
+Safe and idempotent does not mean identical answers, zero incidental effects, or exactly-once execution.
+:::
+```
+
+The compiler omits the title bar entirely, producing a quiet, bordered aside that flows naturally with the argument:
+
+```html
+<aside class="callout callout-important" role="note">
+  <p>Safe and idempotent does not mean identical answers...</p>
+</aside>
+```
+
+When an aside genuinely benefits from a micro-headline, you provide an explicit **editorial title** (such as `::: warning Double-spending hazard`), which renders the specific conceptual headline you wrote rather than a generic bureaucratic label.
+
 ### GitHub-style alerts for lightweight caveats
 
 When an aside is a concise one- or two-sentence advisory, the blockquote syntax is terse, universally recognized across developer tools, and degrades gracefully in basic CommonMark viewers that know nothing of custom container fences:
@@ -212,6 +236,8 @@ When an aside is a concise one- or two-sentence advisory, the blockquote syntax 
 > [!NOTE]
 > Standard RFC 9396 rich authorization details are used throughout this section.
 ```
+
+Our pipeline extends GFM alerts with the same editorial flexibility: appending an editorial headline (e.g. `> [!WARNING Replay risk]`) renders a custom title, while appending `-` (e.g. `> [!NOTE -]`) suppresses the title bar entirely.
 
 ### Unified compilation and zero-JS accessibility
 
@@ -229,7 +255,8 @@ Rather than treating them as separate systems, our build pipeline compiles both 
 
 - **Semantic landmarks**: Screen readers encounter an `<aside role="note">`, correctly identifying it as ancillary context.
 - **Accessible iconography**: Inlined SVGs include `aria-hidden="true"`, preventing screen readers from reciting meaningless vector path coordinates.
-- **Design token integration**: Callout borders and title labels tap directly into our Warm Alabaster and Bordeaux Noir palettes with high-contrast color pairings for green tips, amber warnings, purple invariants, and bordeaux cautions.
+- **Design token integration**: Callout borders and title labels tap directly into our Warm Alabaster and Bordeaux Noir palette tokens (`--muted` coffee slate for background tips and notes; `--accent` Bordeaux ruby and crimson for warnings, invariants, and cautions), preserving typographical restraint and avoiding the generic SaaS rainbow.
+- **Full prose scale**: The body text inside callouts does not shrink into footnote fine print. It inherits the exact 19px Georgia prose scale and line rhythm, maintaining reading comfort across the entire essay.
 - **Zero client JS**: Everything is rendered statically at build time.
 
 ---

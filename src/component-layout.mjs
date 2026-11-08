@@ -33,7 +33,8 @@ export function parseComponentHint(raw) {
   if (CALLOUT_TYPES.has(first)) {
     const customTitle = parts.slice(1).join(' ').trim();
     const type = first === 'info' ? 'note' : first;
-    return { callout: type, title: customTitle || type[0].toUpperCase() + type.slice(1) };
+    const title = (customTitle === '-' || customTitle === 'none' || !customTitle) ? null : customTitle;
+    return { callout: type, title };
   }
 
   if (first.includes('#')) {
@@ -98,8 +99,10 @@ export function componentLayout(md) {
       token.attrSet('class', `callout callout-${type}`);
       token.attrSet('role', 'note');
 
-      const titleToken = state.push('html_block', '', 0);
-      titleToken.content = `<div class="callout-title">${CALLOUT_ICONS[type] || ''} ${title}</div>\n`;
+      if (title) {
+        const titleToken = state.push('html_block', '', 0);
+        titleToken.content = `<div class="callout-title">${CALLOUT_ICONS[type] || ''} ${title}</div>\n`;
+      }
 
       state.md.block.tokenize(state, start + 1, close);
       state.push('callout_close', 'aside', -1).block = true;

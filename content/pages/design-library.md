@@ -97,8 +97,6 @@ flowchart TD
 
 When floated with `mermaid#float-right`, the diagram occupies 44% of the column width, and the following prose wraps cleanly alongside it. On mobile screens up to 760px wide, the floating rule automatically clears, returning the diagram to a full-width stacked presentation. This ensures high-density technical reading remains legible on both large desktop displays and handheld devices without horizontal layout collision.
 
-<div style="clear: both;"></div>
-
 ---
 
 ## 3. Editorial Images across all Layouts
@@ -122,8 +120,6 @@ Block images are rendered as semantic `<figure class="image-figure ...">` enclos
 ![Giovanni Filardo](/assets/pages/about/giovanni.jpg#float-right "Floated figure: 44% width alongside editorial text.")
 
 This text demonstrates prose wrapping alongside a floated image. On desktop screens, the image floats to the right with comfortable margins. On smaller viewports, the float resets to 100% full width to maintain readability.
-
-<div style="clear: both;"></div>
 
 ---
 
@@ -250,7 +246,10 @@ For lightweight single-block callouts and standard CommonMark interoperability, 
 > Standard GitHub alert syntax is fully supported. This note compiles to the exact same accessible aside element as the container version.
 
 > [!TIP]
-> Keep container titles succinct. When no title is specified, the capitalized type name is used automatically.
+> Containers without titles (e.g. `::: note`) render as quiet, title-less asides. In blockquotes, passing `-` (e.g. `> [!NOTE -]`) similarly suppresses the title bar.
+
+> [!NOTE -]
+> This is a quiet, title-less blockquote aside. It carries the left border rule and surface tone without an alert header.
 
 > [!IMPORTANT]
 > Accessibility is preserved out of the box: callouts use `role="note"` and SVG icons are hidden from screen readers via `aria-hidden="true"`.

@@ -25,12 +25,12 @@ export function render(root, site, documents) {
     if (doc.kind === 'page' && ['posts', 'tags', 'assets', 'css', 'js', 'fonts', 'preview', 'motifs'].includes(doc.slug)) throw new Error(`${doc.source}: reserved page slug ${doc.slug}`);
   }
   const seriesByRoute = indexSeries(documents);
-  const previewDocuments = documents.map(d => d.kind === 'post' && d.draft
+  const previewDocuments = documents.map(d => d.kind === 'post' && (d.draft || d.unlisted)
     ? { ...d, route: `/preview/${d.slug}/`, url: local(`/preview/${d.slug}/`) } : d);
   const previewSeriesByRoute = indexSeries(previewDocuments, true);
-  const draftPosts = previewDocuments.filter(d => d.kind === 'post' && d.draft)
+  const draftPosts = previewDocuments.filter(d => d.kind === 'post' && (d.draft || d.unlisted))
     .sort((a, b) => b.date.localeCompare(a.date) || a.slug.localeCompare(b.slug));
-  const published = documents.filter(d => !d.draft);
+  const published = documents.filter(d => !d.draft && !d.unlisted);
   const posts = published.filter(d => d.kind === 'post').sort((a, b) => a.date === b.date ? (a.slug < b.slug ? -1 : 1) : (a.date > b.date ? -1 : 1));
   const tags = [...new Set(posts.flatMap(d => d.tags))].sort().map(name => ({ name: tagLabel(name), slug: tagSlug(name), url: local(`/tags/${tagSlug(name)}/`), posts: posts.filter(d => d.tags.includes(name)) }));
   const toMotifItem = post => {
