@@ -274,6 +274,69 @@ test('image layout hints via URL fragments, captions, and diagnostics', () => {
 });
 
 
+test('component layouts contain Markdown blocks with image-compatible sizes', () => {
+  const table = '| Pattern | Trust |\n| --- | --- |\n| **Staged** | Human |';
+  for (const [hint, expected] of [['', 'default'], ['wide', 'wide'], ['full', 'bleed'], ['bleed', 'bleed'], ['center', 'narrow'], ['narrow', 'narrow'], ['float-left', 'float-left'], ['float-right', 'float-right']]) {
+    const body = parseContent('layout.md', article('', `::: ${hint}\n\n### Matrix\n\n${table}\n\n*Note*\n\n:::\n\nAfter.`), 'post', config).body;
+    assert.match(body, new RegExp(`<figure class="component component-${expected}">`));
+    assert.match(body, /<h3>Matrix<\/h3>/);
+    assert.match(body, /role="region" aria-label="Scrollable table" tabindex="0"><table>/);
+    assert.match(body, /<strong>Staged<\/strong>/);
+    assert.match(body, /<p><em>Note<\/em><\/p>\n<\/figure>\n<p>After\.<\/p>/);
+
+    // Also verify legacy :::component <hint>
+    const legacy = parseContent('layout.md', article('', `:::component ${hint}\n\n${table}\n\n:::`), 'post', config).body;
+    assert.match(legacy, new RegExp(`<figure class="component component-${expected}">`));
+  }
+  const widgetWithHash = parseContent('widget.md', article('', `::: rate-limiter#wide\n\n${table}\n\n:::`), 'post', config).body;
+  assert.match(widgetWithHash, /<figure class="component component-wide" data-widget="rate-limiter">/);
+  const widgetWithSpace = parseContent('widget.md', article('', `::: rate-limiter narrow\n\n${table}\n\n:::`), 'post', config).body;
+  assert.match(widgetWithSpace, /<figure class="component component-narrow" data-widget="rate-limiter">/);
+
+  const nested = parseContent('layout.md', article('', '::: wide\n\n::: narrow\n\n![Alt](/assets/photo.png)\n\n:::\n\n```text\n::: full\n:::\n```\n\n:::'), 'post', config).body;
+  assert.match(nested, /component-wide/);
+  assert.match(nested, /component-narrow/);
+  assert.match(nested, /image-figure image-default/);
+  assert.match(nested, /<code class="language-text">::: full\n:::/);
+  assert.doesNotMatch(nested, /class="component component-bleed"/);
+  for (const hint of ['waid', 'wide+full', '<script>']) {
+    assert.throws(() => parseContent('layout.md', article('', `::: ${hint}\n\nText\n\n:::`), 'post', config), /layout.md: Unknown component layout hint/);
+    assert.throws(() => parseContent('layout.md', article('', `:::component ${hint}\n\nText\n\n:::`), 'post', config), /layout.md: Unknown component layout hint/);
+  }
+  assert.throws(() => parseContent('layout.md', article('', '::: wide\n\nText'), 'post', config), /layout.md: Unclosed component/);
+  const literal = parseContent('layout.md', article('', '```text\n::: wide\n```'), 'post', config).body;
+  assert.doesNotMatch(literal, /class="component /);
+});
+
+test('callouts render semantic accessible asides from both container and blockquote alerts', () => {
+  for (const type of ['tip', 'note', 'warning', 'caution', 'important', 'info']) {
+    const expected = type === 'info' ? 'note' : type;
+    const fromContainer = parseContent('callout.md', article('', `::: ${type}\n\nHelpful advice.\n\n:::`), 'post', config).body;
+    assert.match(fromContainer, new RegExp(`<aside class="callout callout-${expected}" role="note">`));
+    assert.match(fromContainer, /<div class="callout-title">/);
+    assert.match(fromContainer, /<p>Helpful advice\.<\/p>\n<\/aside>/);
+  }
+
+  // Custom title on container
+  const custom = parseContent('callout.md', article('', '::: warning Double-spending hazard\n\nMust expire.\n\n:::'), 'post', config).body;
+  assert.match(custom, /<aside class="callout callout-warning" role="note">/);
+  assert.match(custom, /<div class="callout-title">.*Double-spending hazard<\/div>/);
+  assert.match(custom, /<p>Must expire\.<\/p>/);
+
+  // GitHub alert blockquotes
+  for (const type of ['TIP', 'NOTE', 'WARNING', 'CAUTION', 'IMPORTANT']) {
+    const fromAlert = parseContent('callout.md', article('', `> [!${type}]\n> Alert message.\n`), 'post', config).body;
+    assert.match(fromAlert, new RegExp(`<aside class="callout callout-${type.toLowerCase()}" role="note">`));
+    assert.match(fromAlert, /<div class="callout-title">/);
+    assert.match(fromAlert, /<p>Alert message\.<\/p>\n<\/aside>/);
+  }
+
+  // Regular blockquote remains unmodified
+  const normalQuote = parseContent('quote.md', article('', '> Just an ordinary quote.\n'), 'post', config).body;
+  assert.match(normalQuote, /<blockquote>\n<p>Just an ordinary quote\.<\/p>\n<\/blockquote>/);
+  assert.doesNotMatch(normalQuote, /callout/);
+});
+
 test('inline Mermaid renders accessible, deterministic diagrams with distinct IDs', () => {
   const diagram = '```mermaid Request <path>\nflowchart TD\n A[Browser] --> B[Application]\n```';
   const raw = article('', `${diagram}\n\n${diagram}\n\n\`\`\`js\nconst x = 1;\n\`\`\``);
@@ -286,16 +349,26 @@ test('inline Mermaid renders accessible, deterministic diagrams with distinct ID
   const ids = [...first.matchAll(/ id="([^"]+)"/g)].map(m => m[1]);
   assert.equal(new Set(ids).size, ids.length);
   for (const [, ref] of first.matchAll(/url\(#([^)]+)\)/g)) assert.ok(ids.includes(ref));
+
+  // Layout hint on mermaid fence
+  const wideDiagram = parseContent('wide.md', article('', '```mermaid#wide Wide flowchart\nflowchart LR\n A --> B\n```'), 'post', config).body;
+  assert.match(wideDiagram, /<figure class="mermaid-diagram image-wide">/);
+  assert.match(wideDiagram, /role="img" aria-label="Wide flowchart"/);
+  assert.match(wideDiagram, /<figcaption>Wide flowchart<\/figcaption>/);
+  assert.throws(() => parseContent('bad-mermaid.md', article('', '```mermaid#waid Bad\nflowchart TD\n A --> B\n```'), 'post', config), /bad-mermaid.md: Unknown mermaid layout hint: "waid"/);
+
   assert.throws(() => parseContent('broken.md', article('', '```mermaid\nnot-a-diagram\n```'), 'post', config), /broken.md:/);
 });
 
 test('diagram viewer loads only where needed and respects deployment base paths', async t => {
   const dir = await fixture(t);
   const diagram = '```mermaid Overview\nflowchart LR\n A --> B\n```';
+  const wideDiagram = '```mermaid#wide Wide\nflowchart LR\n A --> B\n```';
   await writeFile(path.join(dir, 'content/posts/diagram.md'), article('', diagram));
   await writeFile(path.join(dir, 'content/posts/draft-diagram.md'), article('draft: true', diagram).replace('slug: example', 'slug: draft-diagram'));
+  await writeFile(path.join(dir, 'content/posts/wide-diagram.md'), article('draft: true', wideDiagram).replace('slug: example', 'slug: wide-diagram'));
   const result = await build(dir, { basePath: '/blog' });
-  for (const route of ['posts/example/index.html', 'preview/draft-diagram/index.html']) {
+  for (const route of ['posts/example/index.html', 'preview/draft-diagram/index.html', 'preview/wide-diagram/index.html']) {
     assert.match(result.get(route), /<script src="\/blog\/js\/diagram-viewer\.js" defer><\/script>/);
   }
   for (const route of ['index.html', 'posts/hello-world/index.html']) {

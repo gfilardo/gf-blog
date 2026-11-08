@@ -58,7 +58,7 @@ export function render(root, site, documents) {
     { route: '/', title: site.title, description: site.description, template: 'index.html', posts },
     { route: '/preview/', title: 'Draft previews', description: 'Work in progress. Anyone with a direct link can read these drafts.', template: 'index.html', posts: draftPosts, preview: true, noindex: true },
     ...draftPosts.map(d => ({ ...d, template: 'post.html', preview: true, noindex: true })),
-    ...published.map(d => ({ ...d, template: d.kind === 'post' ? 'post.html' : 'page.html' })),
+    ...published.map(d => ({ ...d, template: d.kind === 'post' ? 'post.html' : 'page.html', noindex: Boolean(d.noindex) })),
     { route: '/tags/', title: 'Tags', description: 'Browse articles by topic.', template: 'tags.html', tags },
     ...tags.map(tag => ({ route: `/tags/${tag.slug}/`, title: tag.name, description: `Articles tagged ${tag.name}.`, template: 'index.html', posts: tag.posts })),
     { route: '/motifs/', title: 'Article Motifs', description: 'Deterministic geometric identifiers generated for each article.', template: 'motifs.html', motifs: motifItems, algorithms: ALGORITHMS },
@@ -71,7 +71,7 @@ export function render(root, site, documents) {
   });
   for (const page of pages) {
     const motifSvg = page.kind === 'post' ? generateArticleMotif(page) : null;
-    const context = { site, artwork, navigation, home: local('/'), favicon: local('/favicon.svg'), stylesheet: local('/css/style.css'), diagramViewer: page.body?.includes('class="mermaid-diagram"') ? local('/js/diagram-viewer.js') : null, feed: local('/feed.xml'), page: { motifSvg, motifs: page.motifs ?? [], draftMotifs: page.draftMotifs ?? [], algorithms: page.algorithms ?? ALGORITHMS, seriesNav: (page.preview ? previewSeriesByRoute : seriesByRoute).get(page.route) ?? null, previewIndex: local('/preview/'), preview: false, companion: null, date: null, updated: null, body: '', tags: [], noindex: false, ...page, canonical: absolute(page.route), tagLinks: (page.tags && page.kind ? page.tags : []).map(name => ({ name: tagLabel(name), url: local(`/tags/${tagSlug(name)}/`) })) } };
+    const context = { site, artwork, navigation, home: local('/'), favicon: local('/favicon.svg'), stylesheet: local('/css/style.css'), diagramViewer: page.body?.includes('mermaid-diagram') ? local('/js/diagram-viewer.js') : null, feed: local('/feed.xml'), page: { motifSvg, motifs: page.motifs ?? [], draftMotifs: page.draftMotifs ?? [], algorithms: page.algorithms ?? ALGORITHMS, seriesNav: (page.preview ? previewSeriesByRoute : seriesByRoute).get(page.route) ?? null, previewIndex: local('/preview/'), preview: false, companion: null, date: null, updated: null, body: '', tags: [], noindex: false, ...page, canonical: absolute(page.route), tagLinks: (page.tags && page.kind ? page.tags : []).map(name => ({ name: tagLabel(name), url: local(`/tags/${tagSlug(name)}/`) })) } };
     // Standalone page tags are accepted as metadata; only articles join tag archives.
     if (page.kind === 'page' || page.preview) context.page.tagLinks = [];
     if (page.posts) {

@@ -163,3 +163,20 @@ Every 28 simulation seconds, an external visitor agent enters the airspace along
   - `image-frame` (`#frame` or `#border`): Adds `1px solid var(--line)` and `border-radius: 4px` for light/dark background contrast.
   - `image-invert-dark` (`#invert-dark`): Inverts line art in dark mode (`filter: invert(0.9) hue-rotate(180deg)`).
   - `image-pixelated` (`#pixelated`): Disables smoothing (`image-rendering: pixelated`) for crisp retro/pixel art.
+
+### Inline Diagrams & Responsive Fences (`.mermaid-diagram`)
+- **Native Layout Modifiers**: Append `#layout` directly to the fence info string (e.g. ```` ```mermaid#wide ````) to apply `.image-wide`, `.image-bleed`, or `.image-narrow` without requiring outer wrapper markup.
+- **Semantic Enclosure**: Emits `<figure class="mermaid-diagram ...">` with inline SVG and accessible `<figcaption>`.
+- **Progressive Zoom Enhancement**: Built-in modal zoom, pan, and fit controls activate only when JavaScript is available; fully accessible and legible when JavaScript is disabled.
+
+### Layout Containers & Widgets (`.component`)
+- **Fenced Container Syntax**: Wrap multi-block content in `::: <layout>` (e.g. `::: wide ... :::`) or `::: <widget>#<layout>` to break out of the 730px prose column.
+- **Semantic Structure**: Emitted as `<figure class="component component-<layout>">` with optional `data-widget="<name>"`.
+- **Composite Grouping**: Allows grouping tables with their explanatory footnotes and legends so they span wide layouts as a single cohesive visual unit.
+- **Scrollable Data Enclosures**: Tables inside containers are automatically wrapped in `<div class="table-scroll" role="region" tabindex="0">` for keyboard-accessible horizontal navigation on constrained screens, preserving natural text flow without arbitrary cell-width minimums.
+
+### Callouts & Admonitions (`.callout`)
+- **Semantic Enclosure**: Both container fences (`::: <type> [title]`) and GitHub alerts (`> [!TYPE]`) compile to `<aside class="callout callout-<type>" role="note">`.
+- **Supported Tiers**: `note` / `info` (slate), `tip` (emerald), `important` (violet), `warning` (amber), and `caution` (ruby/crimson).
+- **Zero-JS Icons**: Build-time inline SVG Octicons embedded inside `.callout-title` with `aria-hidden="true"`.
+- **Themed Visual Language**: Subtle surface background (`--surface`) with high-contrast left border line and title color matching both light Warm Alabaster and dark Bordeaux Noir themes.

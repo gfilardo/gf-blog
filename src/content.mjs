@@ -5,6 +5,7 @@ import YAML from 'yaml';
 import Ajv from 'ajv';
 import addFormats from 'ajv-formats';
 import MarkdownIt from 'markdown-it';
+import { componentLayout, CALLOUT_ICONS } from './component-layout.mjs';
 import { renderMermaidSVG } from 'beautiful-mermaid';
 import { isKnownAlgorithm } from './motif.mjs';
 import { contentUrl, urls } from './urls.mjs';
@@ -65,14 +66,23 @@ export function parseContent(source, raw, kind, site) {
     if (data.series?.motif && !isKnownAlgorithm(data.series.motif)) {
       throw new Error(`Unknown series motif algorithm "${data.series.motif}"`);
     }
-    const md = new MarkdownIt({ html: false });
+    const md = new MarkdownIt({ html: false }).use(componentLayout);
     const defaultFence = md.renderer.rules.fence;
     md.renderer.rules.fence = (tokens, index, options, env, self) => {
       const token = tokens[index];
-      if (token.info.trim().split(/\s+/)[0] !== 'mermaid') {
+      const firstWord = token.info.trim().split(/\s+/)[0];
+      if (firstWord !== 'mermaid' && !firstWord.startsWith('mermaid#')) {
         return defaultFence(tokens, index, options, env, self);
       }
-      const caption = token.info.trim().slice('mermaid'.length).trim();
+      let layoutClass = '';
+      if (firstWord.startsWith('mermaid#')) {
+        const hint = firstWord.slice('mermaid#'.length).trim();
+        if (!PRIMARY_LAYOUTS.has(hint)) {
+          throw new Error(`Unknown mermaid layout hint: "${hint}". Choose one of: ${[...PRIMARY_LAYOUTS].join(', ')}`);
+        }
+        layoutClass = ` ${HINT_MAP[hint]}`;
+      }
+      const caption = token.info.trim().slice(firstWord.length).trim();
       let svg = renderMermaidSVG(token.content, {
         bg: 'var(--paper)', fg: 'var(--ink)', font: 'Arial', transparent: true, layerSpacing: 24,
         line: 'color-mix(in srgb, var(--ink) 65%, var(--paper))',
@@ -90,7 +100,7 @@ export function parseContent(source, raw, kind, site) {
       svg = svg.replace(/<svg\b[^>]*>/, tag => tag.replace(/(width|height)="([\d.]+)"/g, (_, dimension, value) => `${dimension}="${Number(value) * 1.35}"`));
       const label = md.utils.escapeHtml(caption || 'Diagram');
       svg = svg.replace('<svg ', `<svg role="img" aria-label="${label}" `);
-      return `<figure class="mermaid-diagram">${svg}${caption ? `<figcaption>${label}</figcaption>` : ''}</figure>\n`;
+      return `<figure class="mermaid-diagram${layoutClass}">${svg}${caption ? `<figcaption>${label}</figcaption>` : ''}</figure>\n`;
     };
     const tokens = md.parse(match[2], {});
 
@@ -137,6 +147,53 @@ export function parseContent(source, raw, kind, site) {
         const figClose = new inline.constructor('figcaption_close', 'figcaption', -1);
         inline.children.push(figOpen, ...captionTokens, figClose);
       }
+    }
+
+    for (let i = 0; i < tokens.length; i++) {
+      if (tokens[i].type !== 'blockquote_open') continue;
+      const pOpen = tokens[i + 1];
+      if (!pOpen || pOpen.type !== 'paragraph_open') continue;
+      const inline = tokens[i + 2];
+      if (!inline || inline.type !== 'inline' || !inline.children?.length) continue;
+      const firstChild = inline.children[0];
+      if (firstChild.type !== 'text') continue;
+
+      const matchAlert = /^\[!(NOTE|TIP|IMPORTANT|WARNING|CAUTION|INFO)\](?:\s*\n?)?(.*)$/is.exec(firstChild.content);
+      if (!matchAlert) continue;
+
+      const type = matchAlert[1].toLowerCase() === 'info' ? 'note' : matchAlert[1].toLowerCase();
+      const remainder = matchAlert[2] || '';
+      if (remainder.trim()) {
+        firstChild.content = remainder.trimStart();
+      } else {
+        inline.children.shift();
+        while (inline.children.length && (inline.children[0].type === 'softbreak' || (inline.children[0].type === 'text' && !inline.children[0].content.trim()))) {
+          inline.children.shift();
+        }
+      }
+
+      if (inline.children.length === 0) {
+        tokens.splice(i + 1, 3);
+      }
+
+      tokens[i].tag = 'aside';
+      tokens[i].attrs = [['class', `callout callout-${type}`], ['role', 'note']];
+
+      let depth = 1;
+      for (let j = i + 1; j < tokens.length; j++) {
+        if (tokens[j].type === 'blockquote_open') depth++;
+        if (tokens[j].type === 'blockquote_close') {
+          if (--depth === 0) {
+            tokens[j].tag = 'aside';
+            break;
+          }
+        }
+      }
+
+      const titleText = type[0].toUpperCase() + type.slice(1);
+      const titleToken = new tokens[i].constructor('html_block', '', 0);
+      titleToken.content = `<div class="callout-title">${CALLOUT_ICONS[type] || ''} ${titleText}</div>\n`;
+      tokens.splice(i + 1, 0, titleToken);
     }
 
     const visit = list => {

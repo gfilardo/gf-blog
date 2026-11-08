@@ -31,7 +31,7 @@ In traditional web development, applications collapsed identity, permissions, an
 
 With WebMCP, that assumption collapses. An in-browser agent shares the user's authenticated session, but its actions represent programmatic interpretations. Reasoning about delegation safely requires separating three distinct questions:
 
-```mermaid Three distinct security questions: authentication, authorization, and transaction approval.
+```mermaid#wide Three distinct security questions: authentication, authorization, and transaction approval.
 flowchart LR
     REQ[Request to book ride] --> AUTH[1. Authentication<br/>Who is the caller?]
     AUTH -->|Valid Identity| PERM[2. Authorization<br/>May this account book rides?]
@@ -83,6 +83,8 @@ For high-assurance, treasury, or legal workflows where tampering or non-repudiat
 
 ### Architectural Trade-Off Matrix
 
+::: wide
+
 | Pattern | Who Confirms | Trust Anchor | User Friction | Best Suited For |
 | :--- | :--- | :--- | :--- | :--- |
 | **1. Staged Preparation** | User | Human presence (UI or WebAuthn / Passkeys) | **Low–Medium** (1 tap at the end) | High-value, irreversible actions (flights, wire transfers) |
@@ -91,6 +93,8 @@ For high-assurance, treasury, or legal workflows where tampering or non-repudiat
 | **4. Cryptographic Binding** | User or Authorized Delegate | Asymmetric cryptography (PKI / Keypairs) | **Medium** (Signing prompt per transaction) | High-assurance finance, contracts, non-repudiation |
 
 *(Note: Technical authorization is often paired with operational risk backstops—such as spending velocity limits, temporary authorization holds, and automated dispute resolution. These operational buffers manage financial risk, but they do not replace authorization architecture.)*
+
+:::
 
 ## Consent must have an object
 

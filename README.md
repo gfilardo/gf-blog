@@ -439,9 +439,16 @@ to zoom and dragging to pan. Desktop trackpad pinch (including Mac Safari)
 zooms the diagram under the pointer; ordinary scrolling still pans.
 Close it with the Close button or Escape to return to the article.
 
+Append `#layout` to `mermaid` to map onto responsive layout classes without
+extra wrapper elements:
+- ` ```mermaid#wide Caption `: breaks out to 1088px width.
+- ` ```mermaid#bleed Caption `: spans 100vw viewport width.
+- ` ```mermaid#narrow Caption `: capped at 380px centered.
+- ` ```mermaid#float-left Caption ` / ` ```mermaid#float-right Caption `: floats at 44% width.
+
 ````markdown
-```mermaid A request reaches the application.
-flowchart TD
+```mermaid#wide Three distinct security questions: authentication, authorization, and transaction approval.
+flowchart LR
     Browser --> Application
 ```
 ````
@@ -466,6 +473,62 @@ Images written as standalone Markdown blocks are transformed into semantic HTML5
   - `#invert-dark`: Inverts tones in dark mode (`filter: invert(0.9) hue-rotate(180deg)`) for transparent line art and SVGs.
   - `#pixelated`: Applies `image-rendering: pixelated` for retro graphics and pixel art.
 - **Diagnostics**: Typos (e.g. `#flaot-right`), conflicting primary layouts (`#float-left+float-right`), or block layouts placed inline with text fail the build with helpful error messages. URL fragments are automatically stripped from the final `src` attribute.
+
+#### Component sizes and positioning
+
+Wrap a Markdown block (or a group of blocks) in `::: <layout>` (or `::: <widget>#<layout>` / `::: <widget> <layout>`) and
+close with `:::`. This content-agnostic container works for tables and multi-element blocks,
+and gives future widgets the same layout classes and `data-widget` metadata.
+Markdown inside the wrapper renders normally; raw HTML remains disabled.
+The legacy form `:::component <layout>` is also supported.
+
+```markdown
+::: wide
+
+### Comparison
+
+| Pattern | Best suited for |
+| --- | --- |
+| Staged preparation | High-value actions |
+
+*A note that stays with the table.*
+
+:::
+```
+
+Choose one layout, using the same geometry and mobile behavior as images:
+
+- `default` (also used when omitted): prose-column width.
+- `wide`: centered, up to 1088px inside the site shell.
+- `bleed` or `full`: viewport width.
+- `narrow` or `center`: centered, capped at 380px.
+- `float-left` / `float-right`: 44% width with text wrapping alongside;
+  returns to the prose width on screens up to 760px.
+
+The generated markup is `<figure class="component component-wide">` (adding `data-widget="name"`
+when a widget name is provided). Wide blocks return to prose width on mobile.
+Tables fill their container and scroll horizontally in an accessible, keyboard-focusable
+wrapper (`role="region"`). Unknown layout names and missing closing markers fail
+the build with a source filename.
+
+#### Callouts and admonitions
+
+Authors can highlight tips, notes, warnings, cautions, and architectural invariants using either container syntax (`::: <type> [custom title]`) or standard GitHub-style blockquote alerts (`> [!NOTE]`):
+
+- `::: note` / `::: info`: General background context or explanatory notes.
+- `::: tip`: Best practices, optimizations, or helpful recommendations.
+- `::: important`: Critical requirements or essential invariants.
+- `::: warning`: Warnings about security hazards, double spending, or operational risk.
+- `::: caution`: High-risk warnings such as permanent key loss or destructive actions.
+
+Custom titles can be appended to container callouts (e.g. `::: warning Double-spending hazard`). GitHub-style alerts (`> [!NOTE]`, `> [!TIP]`, `> [!IMPORTANT]`, `> [!WARNING]`, `> [!CAUTION]`) automatically map to the same accessible HTML structure:
+
+```html
+<aside class="callout callout-<type>" role="note">
+  <div class="callout-title"><svg ...> Title</div>
+  <p>Message</p>
+</aside>
+```
 
 Only article tags generate archives; each archive uses the same ordering as the home page.
 
