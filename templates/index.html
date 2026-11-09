@@ -17,7 +17,7 @@
 <header class="page-heading"><p class="eyebrow">{% if page.preview %}Preview collection · <a href="{{ home }}design-library/">Design library</a>{% elif page.eyebrow %}{{ page.eyebrow }}{% else %}Topic archive{% endif %}</p><h1>{{ page.title }}</h1><p class="intro">{{ page.description }}</p></header>
 {% endif %}
 <section id="articles" class="writing-section" aria-labelledby="writing-title">
-  <div class="section-heading"><h2 id="writing-title">Articles</h2><span class="meta">{{ page.posts.length }} {% if page.posts.length == 1 %}article{% else %}articles{% endif %}</span></div>
+  <div class="section-heading"><h2 id="writing-title">{% if page.route == '/' %}Featured Articles{% else %}Articles{% endif %}</h2>{% if page.route != '/' %}<span class="meta">{{ page.posts.length }} {% if page.posts.length == 1 %}article{% else %}articles{% endif %}</span>{% endif %}</div>
   <ul class="articles">
   {% for post in page.posts %}
     <li><article class="article-card">
@@ -34,5 +34,10 @@
     </article></li>
   {% else %}<li class="empty-state">{% if page.preview %}No drafts to preview.{% else %}No articles published yet. Check back soon.{% endif %}</li>{% endfor %}
   </ul>
+  {% if page.route == '/' %}
+  <div class="section-footer">
+    <a class="text-link" href="{{ home }}articles/">All articles <span aria-hidden="true">→</span></a>
+  </div>
+  {% endif %}
 </section>
 {% endblock %}

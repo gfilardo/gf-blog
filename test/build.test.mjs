@@ -84,9 +84,13 @@ test('featured articles curate the home page while /articles/ lists all publishe
   // Home page includes featured hello-world but NOT unfeatured
   assert.match(result.get('index.html'), /href="\/posts\/hello-world\/"/);
   assert.ok(!result.get('index.html').includes('/posts/archive-only/'));
+  assert.match(result.get('index.html'), /<div class="section-heading"><h2 id="writing-title">Featured Articles<\/h2><\/div>/);
+  assert.match(result.get('index.html'), /href="\/articles\/"/);
   // Articles index includes BOTH
   assert.match(result.get('articles/index.html'), /href="\/posts\/hello-world\/"/);
   assert.match(result.get('articles/index.html'), /href="\/posts\/archive-only\/"/);
+  assert.match(result.get('articles/index.html'), /<div class="section-heading"><h2 id="writing-title">Articles<\/h2><span class="meta">2 articles<\/span><\/div>/);
+  assert.ok(!result.get('articles/index.html').includes('Featured Articles'));
 });
 test('failed builds preserve output; collisions and broken links are rejected', async t => {
   const dir = await fixture(t);
