@@ -13,6 +13,7 @@ series:
   title: "WebMCP and the agent-ready web"
   part: 1
 draft: false
+featured: true
 ---
 
 The web has an extraordinary distribution model: send someone a link, and they can open an application, sign in, and start working immediately without installing a runtime or downloading updates. The same platform serves documents, banking software, design tools, and complex business systems. That ubiquity makes the browser a natural, compelling environment for the next stage of agentic computing.

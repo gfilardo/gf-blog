@@ -12,6 +12,7 @@ series:
   title: This blog
   part: 1
 draft: false
+featured: true
 ---
 Most personal websites eventually collapse under the weight of their own tooling. A framework updates, an ecosystem shifts, or a dynamic CMS accumulates database migrations and security patches for what is fundamentally a collection of static essays.
 

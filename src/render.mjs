@@ -22,7 +22,7 @@ export function render(root, site, documents) {
   for (const doc of documents) {
     if (routes.has(doc.route)) throw new Error(`${doc.source}: duplicate route ${doc.route}`);
     routes.add(doc.route);
-    if (doc.kind === 'page' && ['posts', 'tags', 'assets', 'css', 'js', 'fonts', 'preview', 'motifs'].includes(doc.slug)) throw new Error(`${doc.source}: reserved page slug ${doc.slug}`);
+    if (doc.kind === 'page' && ['articles', 'posts', 'tags', 'assets', 'css', 'js', 'fonts', 'preview', 'motifs'].includes(doc.slug)) throw new Error(`${doc.source}: reserved page slug ${doc.slug}`);
   }
   const seriesByRoute = indexSeries(documents);
   const previewDocuments = documents.map(d => d.kind === 'post' && (d.draft || d.unlisted)
@@ -32,6 +32,7 @@ export function render(root, site, documents) {
     .sort((a, b) => b.date.localeCompare(a.date) || a.slug.localeCompare(b.slug));
   const published = documents.filter(d => !d.draft && !d.unlisted);
   const posts = published.filter(d => d.kind === 'post').sort((a, b) => a.date === b.date ? (a.slug < b.slug ? -1 : 1) : (a.date > b.date ? -1 : 1));
+  const featuredPosts = posts.filter(d => d.featured);
   const tags = [...new Set(posts.flatMap(d => d.tags))].sort().map(name => ({ name: tagLabel(name), slug: tagSlug(name), url: local(`/tags/${tagSlug(name)}/`), posts: posts.filter(d => d.tags.includes(name)) }));
   const toMotifItem = post => {
     const meta = resolveMotifParameters(post);
@@ -55,7 +56,8 @@ export function render(root, site, documents) {
   ].sort((a, b) => (b.date || '').localeCompare(a.date || '') || a.slug.localeCompare(b.slug));
   const motifItems = allMotifPosts.map(toMotifItem);
   const pages = [
-    { route: '/', title: site.title, description: site.description, template: 'index.html', posts },
+    { route: '/', title: site.title, description: site.description, template: 'index.html', posts: featuredPosts },
+    { route: '/articles/', title: 'Articles', description: 'All published articles on software architecture, engineering, and systems.', eyebrow: 'Archive', template: 'index.html', posts },
     { route: '/preview/', title: 'Draft previews', description: 'Work in progress. Anyone with a direct link can read these drafts.', template: 'index.html', posts: draftPosts, preview: true, noindex: true },
     ...draftPosts.map(d => ({ ...d, template: 'post.html', preview: true, noindex: true })),
     ...published.map(d => ({ ...d, template: d.kind === 'post' ? 'post.html' : 'page.html', noindex: Boolean(d.noindex) })),

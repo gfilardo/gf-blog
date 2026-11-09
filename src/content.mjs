@@ -225,7 +225,7 @@ export function parseContent(source, raw, kind, site) {
     };
     visit(tokens);
     const route = kind === 'post' ? `/posts/${data.slug}/` : `/${data.slug}/`;
-    return { date: null, updated: null, draft: false, unlisted: false, tags: [], ...data, source, kind, route, url: urls(site).local(route), body: md.renderer.render(tokens, md.options, {}) };
+    return { date: null, updated: null, draft: false, unlisted: false, featured: false, tags: [], ...data, source, kind, route, url: urls(site).local(route), body: md.renderer.render(tokens, md.options, {}) };
   } catch (error) {
     throw new Error(`${source}: ${error.message}`, { cause: error });
   }

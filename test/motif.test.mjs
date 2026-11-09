@@ -178,6 +178,7 @@ test('render produces /motifs/ recap page including both published articles and 
       date: '2026-10-25',
       description: 'A published article',
       draft: false,
+      featured: true,
       tags: ['software'],
       route: '/posts/published-article/',
       url: '/posts/published-article/',

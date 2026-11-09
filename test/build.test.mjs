@@ -11,7 +11,7 @@ import { templates } from '../src/template.mjs';
 import { XMLValidator, XMLParser } from 'fast-xml-parser';
 const root = path.resolve(import.meta.dirname, '..');
 const config = JSON.parse(await readFile(path.join(root, 'site.config.json'), 'utf8'));
-const article = (extra = '', body = 'Some **text**.') => `---\ntitle: Example\nslug: example\ndate: "2026-10-17"\ndescription: Example article\n${extra}\n---\n${body}`;
+const article = (extra = '', body = 'Some **text**.') => `---\ntitle: Example\nslug: example\ndate: "2026-10-17"\ndescription: Example article\nfeatured: true\n${extra}\n---\n${body}`;
 async function fixture(t) {
   const dir = await mkdtemp(path.join(os.tmpdir(), 'blog-test-'));
   t.after(() => rm(dir, { recursive: true, force: true }));
@@ -19,7 +19,7 @@ async function fixture(t) {
   // Keep fixtures independent of additional articles in the actual blog.
   await rm(path.join(dir, 'content/posts'), { recursive: true });
   await mkdir(path.join(dir, 'content/posts'));
-  await writeFile(path.join(dir, 'content/posts/hello-world.md'), `---\ntitle: Hello world\nslug: hello-world\ndate: "2026-10-17"\ndescription: A small place for notes, ideas, and things I am learning.\ntags:\n  - blogging\n  - software\ndraft: false\n---\nWelcome to my blog.\n`);
+  await writeFile(path.join(dir, 'content/posts/hello-world.md'), `---\ntitle: Hello world\nslug: hello-world\ndate: "2026-10-17"\ndescription: A small place for notes, ideas, and things I am learning.\ntags:\n  - blogging\n  - software\nfeatured: true\ndraft: false\n---\nWelcome to my blog.\n`);
   await writeFile(path.join(dir, 'site.config.json'), JSON.stringify({ ...config, origin: 'https://example.com' }));
   return dir;
 }
@@ -73,6 +73,20 @@ test('ordering, escaping, drafts, and automatic tag archives', async t => {
   await unlink(path.join(dir, 'content/posts/hello-world.md'));
   const empty = await build(dir);
   assert.match(empty.get('index.html'), /No articles published yet/);
+});
+test('featured articles curate the home page while /articles/ lists all published articles', async t => {
+  const dir = await fixture(t);
+  // hello-world in fixture is featured: true
+  // Create an unfeatured published article:
+  await writeFile(path.join(dir, 'content/posts/unfeatured.md'), `---\ntitle: Archive Only\nslug: archive-only\ndate: "2026-10-18"\ndescription: Archive only article\nfeatured: false\ndraft: false\n---\nBody.`);
+  const result = await build(dir);
+  assert.ok(result.has('articles/index.html'));
+  // Home page includes featured hello-world but NOT unfeatured
+  assert.match(result.get('index.html'), /href="\/posts\/hello-world\/"/);
+  assert.ok(!result.get('index.html').includes('/posts/archive-only/'));
+  // Articles index includes BOTH
+  assert.match(result.get('articles/index.html'), /href="\/posts\/hello-world\/"/);
+  assert.match(result.get('articles/index.html'), /href="\/posts\/archive-only\/"/);
 });
 test('failed builds preserve output; collisions and broken links are rejected', async t => {
   const dir = await fixture(t);

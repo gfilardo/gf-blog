@@ -14,7 +14,7 @@
 </section>
 <script type="module" src="{{ home }}js/system-field.js" defer></script>
 {% else %}
-<header class="page-heading"><p class="eyebrow">{% if page.preview %}Preview collection · <a href="{{ home }}design-library/">Design library</a>{% else %}Topic archive{% endif %}</p><h1>{{ page.title }}</h1><p class="intro">{{ page.description }}</p></header>
+<header class="page-heading"><p class="eyebrow">{% if page.preview %}Preview collection · <a href="{{ home }}design-library/">Design library</a>{% elif page.eyebrow %}{{ page.eyebrow }}{% else %}Topic archive{% endif %}</p><h1>{{ page.title }}</h1><p class="intro">{{ page.description }}</p></header>
 {% endif %}
 <section id="articles" class="writing-section" aria-labelledby="writing-title">
   <div class="section-heading"><h2 id="writing-title">Articles</h2><span class="meta">{{ page.posts.length }} {% if page.posts.length == 1 %}article{% else %}articles{% endif %}</span></div>

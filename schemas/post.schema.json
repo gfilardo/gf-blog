@@ -35,6 +35,9 @@
     "unlisted": {
       "type": "boolean"
     },
+    "featured": {
+      "type": "boolean"
+    },
     "tags": {
       "type": "array",
       "uniqueItems": true,

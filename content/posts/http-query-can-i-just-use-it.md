@@ -12,6 +12,7 @@ series:
   title: HTTP QUERY in practice
   part: 1
 companion: https://github.com/gfilardo/gf-notebook-examples/tree/main/http-query-can-i-just-use-it
+featured: true
 draft: false
 ---
 

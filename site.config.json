@@ -9,7 +9,7 @@
   "navigation": [
     {
       "title": "Articles",
-      "path": "/"
+      "path": "/articles/"
     },
     {
       "title": "Tags",

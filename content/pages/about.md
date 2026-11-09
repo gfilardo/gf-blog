@@ -79,4 +79,4 @@ If you would like to discuss software architecture, decentralized systems, AI-as
 
 - Connect with me on [LinkedIn](https://www.linkedin.com/in/giovanni-filardo/)
 - Follow long-form writing via the [RSS feed](/feed.xml)
-- Browse the [article index](/) for recent essays
+- Browse the [article index](/articles/) for recent essays
