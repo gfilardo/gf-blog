@@ -56,6 +56,7 @@ test('complete build, deterministic output, tags, stable permalinks and base pat
   const prefixed = await build(dir, { basePath: '/my-blog' });
   assert.match(prefixed.get('index.html'), /href="\/my-blog\/posts\/hello-world\/"/);
   assert.match(prefixed.get('posts/hello-world/index.html'), /href="\/my-blog\/about\/"/);
+  assert.match(prefixed.get('posts/hello-world/index.html'), /<a class="back-link" href="\/my-blog\/articles\/">← All articles<\/a>/);
   assert.match(prefixed.get('feed.xml'), /https:\/\/example.com\/my-blog\/posts\/hello-world\//);
   assert.match(prefixed.get('sitemap.xml'), /https:\/\/example.com\/my-blog\/tags\/software\//);
 });
@@ -86,6 +87,7 @@ test('featured articles curate the home page while /articles/ lists all publishe
   assert.ok(!result.get('index.html').includes('/posts/archive-only/'));
   assert.match(result.get('index.html'), /<div class="section-heading"><h2 id="writing-title">Featured Articles<\/h2><\/div>/);
   assert.match(result.get('index.html'), /href="\/articles\/"/);
+  assert.match(result.get('posts/hello-world/index.html'), /<a class="back-link" href="\/articles\/">← All articles<\/a>/);
   // Articles index includes BOTH
   assert.match(result.get('articles/index.html'), /href="\/posts\/hello-world\/"/);
   assert.match(result.get('articles/index.html'), /href="\/posts\/archive-only\/"/);

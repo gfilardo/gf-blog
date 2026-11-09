@@ -12,6 +12,7 @@ series:
   title: This blog
   part: 2
 draft: false
+featured: true
 ---
 
 The essay is one of the most resilient intellectual forms. From Michel de Montaigne to modern technical essayists, its strength has always rested on a single architectural invariant: **the continuous reading flow**. A sustained argument unfolds as an unbroken, contemplative thread of prose. The typography remains quiet, the margins remain predictable, and the authorial voice carries the reader through an evolving sequence of ideas.
