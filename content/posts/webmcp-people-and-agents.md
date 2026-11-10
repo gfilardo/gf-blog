@@ -65,7 +65,7 @@ While the architectural potential is substantial, WebMCP remains an early, emerg
 
 Yet exposing programmatic shortcuts alongside a visual interface introduces a subtle, unexpected architectural trap. When an agent can trigger backend actions without navigating the step-by-step visual journey, what happens to the warning banners, price disclosures, and explicit confirmation checkboxes carefully designed for human eyes? If the agent interface bypasses those gates, the system can commit users to outcomes they never actually approved.
 
-In the next article, we examine how unaligned agent shortcuts can quietly produce unintentional dark patterns—and how architects can keep agent efficiency aligned with informed user consent.
+In the next article, we examine the slippery slope between helpful agent shortcuts and compromised user intent—and how to architect efficiency that genuinely respects informed consent
 
 ## An accompanying example
 

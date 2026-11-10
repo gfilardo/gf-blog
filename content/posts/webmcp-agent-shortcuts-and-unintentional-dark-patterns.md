@@ -15,6 +15,7 @@ series:
 motif:
   algorithm: supershape
 draft: true
+unlisted: true
 ---
 
 > In an agent-ready web, **dark patterns** can emerge entirely by accident. Exposing an in-page tool that bypasses the warning banners and price checks displayed on screen produces an unintentional dark pattern: to the developer, a clean API wrapper; to the user holding an unapproved charge, commitment without informed consent; to the business, an immediate source of payment disputes and regulatory exposure.
