@@ -1,5 +1,7 @@
 ---
+id: webmcp-agent-shortcuts-and-unintentional-dark-patterns
 title: "WebMCP: Agent shortcuts and unintentional dark patterns"
+author: "Giovanni Filardo"
 slug: webmcp-agent-shortcuts-and-unintentional-dark-patterns
 date: "2026-10-30"
 description: "How material conditions can disappear between human and agent interfaces, creating unintended dark patterns."

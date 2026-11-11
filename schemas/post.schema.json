@@ -3,13 +3,23 @@
   "type": "object",
   "additionalProperties": false,
   "required": [
+    "id",
     "title",
+    "author",
     "slug",
     "date",
     "description"
   ],
   "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+    },
     "title": {
+      "type": "string",
+      "pattern": "\\S"
+    },
+    "author": {
       "type": "string",
       "pattern": "\\S"
     },
@@ -36,6 +46,9 @@
       "type": "boolean"
     },
     "featured": {
+      "type": "boolean"
+    },
+    "timestamp": {
       "type": "boolean"
     },
     "tags": {

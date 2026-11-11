@@ -287,6 +287,18 @@ main > .eyebrow:first-child { margin-top: 70px; }
   .diagram-viewer button { min-width: 44px; height: 44px; background: var(--paper); }
 }
 
+.provenance-meta a { text-decoration: none; color: var(--muted); font-family: var(--mono); font-size: 11px; }
+.provenance-meta a:hover { color: var(--accent); }
+.provenance-colophon { margin: 3.5em 0 2em; padding: 18px 22px; border: 1px solid var(--line); border-radius: 4px; background: var(--surface); font: 13px/1.6 var(--sans); }
+.provenance-inner { display: flex; flex-direction: column; gap: 8px; }
+.provenance-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.provenance-badge { font: 11px/1.4 var(--mono); text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); font-weight: 600; }
+.provenance-version { font: 12px var(--mono); font-weight: 600; color: var(--ink); background: var(--paper); padding: 2px 7px; border-radius: 3px; border: 1px solid var(--line); }
+.provenance-desc { margin: 0; color: var(--muted); }
+.provenance-desc a { color: var(--accent); }
+.provenance-download { display: inline-block; font: 11px var(--mono); margin-left: 6px; }
+.provenance-drift { margin: 4px 0 0; color: var(--accent); font-size: 12px; font-weight: 500; }
+
 @media print {
   .diagram-expand, .diagram-viewer[open] { display: none; }
   .diagram-viewer-open { overflow: visible; }

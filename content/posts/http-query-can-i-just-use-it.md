@@ -1,5 +1,7 @@
 ---
+id: http-query-can-i-just-use-it
 title: "HTTP has QUERY now. Can I just use it?"
+author: "Giovanni Filardo"
 slug: http-query-can-i-just-use-it
 date: "2026-10-26"
 description: A working QUERY request is the beginning. Follow a complex read through browsers, gateways, frameworks, retries, caches, and API tooling.

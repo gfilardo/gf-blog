@@ -1,5 +1,7 @@
 ---
+id: decentralized-timestamps-pt2
 title: "Implementing decentralized timestamps: pipelines, state machines, and verification"
+author: "Giovanni Filardo"
 slug: implementing-decentralized-timestamps-pipelines-and-verification
 date: "2026-11-09"
 description: "How to engineer an automated, zero-cost OpenTimestamps pipeline: solving canonicalization, managing asynchronous state, and enabling offline verification."
@@ -148,6 +150,9 @@ The manifest tracks the content hash, versioned proof path, and confirmation sta
 
 Rather than burdening deployment runners, provenance is managed locally through two targeted scripts: `stamp` and `upgrade`.
 
+> [!NOTE] Zero financial cost and zero credentials
+> OpenTimestamps requires no cryptocurrency wallet, no API tokens, and zero payment. Public calendar servers aggregate hashes into massive Merkle trees and pay the single Bitcoin transaction fee on authors' behalf. The only operational requirement is network access to submit the 32-byte hash and upgrade the proof once the batch confirms on-chain.
+
 ### 1. The stamping cycle
 Before committing a new or revised document, run the local stamp script:
 
@@ -228,19 +233,78 @@ flowchart LR
 2. **Stage 2 (On-Chain Bitcoin Proof)**: The upgraded receipt continues the cryptographic path into Bitcoin. It proves how the calendar Merkle root was embedded into a transaction's `OP_RETURN` script, and how that transaction connects through the block's internal transaction tree to the `merkle_root` recorded in the **80-byte Bitcoin block header**.
 3. **The Proof-of-Work Check**: The client verifies that the block header meets Bitcoin's Proof-of-Work difficulty target and belongs to the valid blockchain. Because Bitcoin headers are compact (under 70 MB for the entire chain since 2009), this check can be performed completely offline on a local machine.
 
-### Reproducible verification steps
-To audit a stamped document independently:
+### Reproducible verification: from raw bytes to block explorer
+
+To understand how an auditor verifies your proof, it helps to walk through the journey step-by-step. The defining feature of OpenTimestamps is that an auditor never has to trust the author, the hosting server, or even OpenTimestamps itself.
+
+#### 1. Compute the local file hash
+The auditor begins by calculating the SHA-256 digest of the downloaded document:
 
 ```bash
-# 1. Obtain the document and the detached proof
-curl -sO https://giovannifilardo.com/content/posts/system-architecture-spec.md
-curl -sO https://giovannifilardo.com/proofs/system-architecture-spec/v1.ots
-
-# 2. Verify directly against the Bitcoin blockchain
-ots verify v1.ots -f system-architecture-spec.md
+shasum -a 256 my-document.md
+# Example output:
+# 16efa7abadaf4f86969bacbf0f7db2acce22d88927760d01d82b13e71903281b
 ```
 
-If the verification succeeds, the OpenTimestamps client traverses the Merkle path embedded in the `.ots` file, matches the computed root against a confirmed Bitcoin block header, and outputs the exact block height and timestamp.
+#### 2. Inspect the Merkle audit path
+The `.ots` file is a serialized recipe of cryptographic operations (concatenations and hashes) rather than a simple digital signature. Using the OpenTimestamps CLI:
+
+```bash
+npx --package=opentimestamps ots-cli.js info v1.ots
+```
+
+The output reveals the entire path connecting the document to Bitcoin consensus:
+
+```text
+File sha256 hash: 16efa7abadaf4f86969bacbf0f7db2acce22d88927760d01d82b13e71903281b
+Timestamp:
+append 432c9ad4330a567a
+sha256
+prepend c81dd1e2e31c1f8487185dc055accd5c0fe38a368ddb8978b664fb789ec08ed5
+sha256
+...
+# transaction id 8a45961925c0a76f953fa9c4c741bfdf3d46074341a94d129c87ebfc6e28254f
+...
+verify BitcoinBlockHeaderAttestation(975431)
+# Bitcoin block merkle root affcd985cdea192f1fba9fa3cfb3be5b00b8ac359552aa91685ebff7882fbb72
+```
+
+Notice the key anchor points in this recipe:
+* **The file hash**: Matches the digest calculated in Step 1.
+* **The operations**: Each `append` and `prepend` provides the "sibling hash" needed to climb up the calendar's Merkle tree without needing to download anyone else's documents.
+* **The transaction ID**: Identifies the Bitcoin transaction containing the calendar's commitment.
+* **The Bitcoin block header**: Confirms the block height (`#975431`) and the block's transaction Merkle root.
+
+#### 3. Why inclusion in the Merkle root cannot be faked
+A natural question is: *How does an auditor know their specific hash was truly included in that Bitcoin transaction root?*
+
+The answer lies in the collision and pre-image resistance of SHA-256:
+* The verifier starts with the document hash $H_0$ and applies each operation in sequence:
+  $$H_1 = \text{SHA256}(H_0 \mathbin{\Vert} \text{sibling}_1)$$
+  $$H_2 = \text{SHA256}(\text{sibling}_2 \mathbin{\Vert} H_1)$$
+* If an attacker changed even a single byte or punctuation mark in the document, the initial hash would completely change (the avalanche effect). Every subsequent intermediate hash would diverge, and the computed root would fail to match the Bitcoin transaction.
+* Because SHA-256 cannot be reversed, it is computationally impossible (requiring on the order of $2^{128}$ to $2^{256}$ operations) to find any other document that evaluates to the same root through that operation sequence.
+
+#### 4. Audit on an independent block explorer
+To verify without any specialized OpenTimestamps tools, open any independent public Bitcoin explorer (such as [mempool.space](https://mempool.space) or [blockstream.info](https://blockstream.info)):
+
+1. Search for the transaction ID from the proof:
+   `https://mempool.space/tx/8a45961925c0a76f953fa9c4c741bfdf3d46074341a94d129c87ebfc6e28254f`
+2. Inspect the outputs: an `OP_RETURN` script contains the exact 32-byte Merkle root output by your proof's calendar branch.
+3. Open the block header for that transaction:
+   `https://mempool.space/block/975431`
+4. Verify that the block's `Merkle Root` matches the final hash computed by the proof (`affcd985cdea...`).
+
+#### 5. Automated zero-trust verification
+To perform this entire verification in one automated step against your own local Bitcoin full node (`bitcoind`):
+
+```bash
+npx --package=opentimestamps ots-cli.js verify \
+  -b http://user:pass@127.0.0.1:8332 \
+  v1.ots -f my-document.md
+```
+
+Alternatively, anyone can drag-and-drop the markdown file and `.ots` proof into the web verifier at [opentimestamps.org](https://opentimestamps.org) to run the same cryptographic validation in their browser.
 
 Crucially, because the author's identity is declared directly in the frontmatter (`author: Giovanni Filardo`) and committed into the raw hashed bytes, **verification requires only a single command**. The auditor does not need to retrieve a public key from an external keyserver, import an X.509 certificate, or run a detached signature check. The text, metadata, and attribution are all verified simultaneously against Bitcoin consensus.
 

@@ -1,5 +1,7 @@
 ---
+id: computational-colophons
 title: "Computational colophons: generative article motifs and the digital ex-libris"
+author: "Giovanni Filardo"
 slug: computational-colophons
 date: "2026-11-09"
 description: "Reviving historical printer's marks with deterministic vector mathematics: seed stability, date-based epochs, inline SVG, and the physics of micro-scale optical sizing."

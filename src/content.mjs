@@ -1,4 +1,5 @@
 import { readFile, readdir } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import YAML from 'yaml';
@@ -225,20 +226,51 @@ export function parseContent(source, raw, kind, site) {
     };
     visit(tokens);
     const route = kind === 'post' ? `/posts/${data.slug}/` : `/${data.slug}/`;
-    return { date: null, updated: null, draft: false, unlisted: false, featured: false, tags: [], ...data, source, kind, route, url: urls(site).local(route), body: md.renderer.render(tokens, md.options, {}) };
+    return { date: null, updated: null, draft: false, unlisted: false, featured: false, timestamp: true, tags: [], ...data, source, kind, route, url: urls(site).local(route), body: md.renderer.render(tokens, md.options, {}) };
   } catch (error) {
     throw new Error(`${source}: ${error.message}`, { cause: error });
   }
 }
 export async function loadContent(root, site) {
   const docs = [];
+  const seenIds = new Map();
+  let manifest = null;
+  try {
+    const manifestPath = path.join(root, 'static/proofs/manifest.json');
+    manifest = JSON.parse(await readFile(manifestPath, 'utf8'));
+  } catch {}
+
   for (const kind of ['post', 'page']) {
     const dir = path.join(root, 'content', `${kind}s`);
     for (const entry of (await readdir(dir, { withFileTypes: true })).sort((a, b) => a.name < b.name ? -1 : 1)) {
       if (entry.isSymbolicLink() || entry.isDirectory()) throw new Error(`${dir}/${entry.name}: only direct Markdown files are supported`);
       if (!entry.name.endsWith('.md')) continue;
       const source = path.join(dir, entry.name);
-      docs.push(parseContent(source, await readFile(source, 'utf8'), kind, site));
+      const rawBuffer = await readFile(source);
+      const doc = parseContent(source, rawBuffer.toString('utf8'), kind, site);
+      if (doc.id) {
+        if (seenIds.has(doc.id)) {
+          throw new Error(`Duplicate document id "${doc.id}" in ${source} (already declared in ${seenIds.get(doc.id)})`);
+        }
+        seenIds.set(doc.id, source);
+
+        if (doc.timestamp !== false && manifest?.articles?.[doc.id]) {
+          const articleEntry = manifest.articles[doc.id];
+          const latest = articleEntry.versions?.[articleEntry.versions.length - 1];
+          if (latest) {
+            const currentHash = createHash('sha256').update(rawBuffer).digest('hex');
+            doc.provenance = {
+              version: latest.version,
+              status: latest.status,
+              bitcoinBlock: latest.bitcoinBlock || null,
+              bitcoinBlockDate: latest.bitcoinBlockTime ? latest.bitcoinBlockTime.slice(0, 10) : null,
+              proofUrl: urls(site).local(`/proofs/${doc.id}/v${latest.version}.ots`),
+              isCurrent: latest.fileHash === currentHash
+            };
+          }
+        }
+      }
+      docs.push(doc);
     }
   }
   return docs;

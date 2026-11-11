@@ -4,14 +4,14 @@ import { mkdtemp, cp, readFile, writeFile, rm, mkdir, unlink, rename } from 'nod
 import os from 'node:os';
 import path from 'node:path';
 import { build } from '../src/build.mjs';
-import { parseContent } from '../src/content.mjs';
+import { parseContent, loadContent } from '../src/content.mjs';
 import { preview } from '../src/preview.mjs';
 import { verify } from '../src/output.mjs';
 import { templates } from '../src/template.mjs';
 import { XMLValidator, XMLParser } from 'fast-xml-parser';
 const root = path.resolve(import.meta.dirname, '..');
 const config = JSON.parse(await readFile(path.join(root, 'site.config.json'), 'utf8'));
-const article = (extra = '', body = 'Some **text**.') => `---\ntitle: Example\nslug: example\ndate: "2026-10-17"\ndescription: Example article\nfeatured: true\n${extra}\n---\n${body}`;
+const article = (extra = '', body = 'Some **text**.') => `---\nid: example\ntitle: Example\nauthor: "Giovanni Filardo"\nslug: example\ndate: "2026-10-17"\ndescription: Example article\nfeatured: true\n${extra}\n---\n${body}`;
 async function fixture(t) {
   const dir = await mkdtemp(path.join(os.tmpdir(), 'blog-test-'));
   t.after(() => rm(dir, { recursive: true, force: true }));
@@ -19,20 +19,33 @@ async function fixture(t) {
   // Keep fixtures independent of additional articles in the actual blog.
   await rm(path.join(dir, 'content/posts'), { recursive: true });
   await mkdir(path.join(dir, 'content/posts'));
-  await writeFile(path.join(dir, 'content/posts/hello-world.md'), `---\ntitle: Hello world\nslug: hello-world\ndate: "2026-10-17"\ndescription: A small place for notes, ideas, and things I am learning.\ntags:\n  - blogging\n  - software\nfeatured: true\ndraft: false\n---\nWelcome to my blog.\n`);
+  await writeFile(path.join(dir, 'content/posts/hello-world.md'), `---\nid: hello-world\ntitle: Hello world\nauthor: "Giovanni Filardo"\nslug: hello-world\ndate: "2026-10-17"\ndescription: A small place for notes, ideas, and things I am learning.\ntags:\n  - blogging\n  - software\nfeatured: true\ndraft: false\n---\nWelcome to my blog.\n`);
   await writeFile(path.join(dir, 'site.config.json'), JSON.stringify({ ...config, origin: 'https://example.com' }));
   return dir;
 }
 test('metadata schemas and source diagnostics', () => {
-  for (const extra of ['date: "2026-02-30"', 'titel: typo', 'tags: [one, one]', 'draft: yes', 'unlisted: yes', 'slug: ../bad', 'updated: "2020-01-01"']) {
+  for (const extra of ['date: "2026-02-30"', 'titel: typo', 'tags: [one, one]', 'draft: yes', 'unlisted: yes', 'slug: ../bad', 'updated: "2020-01-01"', 'id: "Invalid_ID"']) {
     assert.throws(() => parseContent('article.md', article(extra), 'post', config), /article.md:/);
   }
+  assert.throws(() => parseContent('article.md', article().replace('id: example\n', ''), 'post', config), /id/);
+  assert.throws(() => parseContent('article.md', article().replace('author: "Giovanni Filardo"\n', ''), 'post', config), /author/);
   assert.throws(() => parseContent('article.md', article().replace('2026-10-17', '2026-02-30'), 'post', config), /date/);
   assert.throws(() => parseContent('article.md', article('', '# Heading'), 'post', config), /##/);
   assert.throws(() => parseContent('article.md', article('', '[relative](other.md)'), 'post', config), /root-relative/);
-  const parsed = parseContent('arbitrary-filename.md', article('tags: [node]'), 'post', config);
+  const parsed = parseContent('arbitrary-filename.md', article('tags: [node]').replace('id: example', 'id: my-post-id'), 'post', config);
   assert.equal(parsed.route, '/posts/example/');
+  assert.equal(parsed.author, 'Giovanni Filardo');
+  assert.equal(parsed.id, 'my-post-id');
   assert.match(parsed.body, /<strong>text<\/strong>/);
+  const uuidParsed = parseContent('uuid.md', article().replace('id: example', 'id: "f81d4fae-7dec-41d0-a765-00a0c91e6bf6"'), 'post', config);
+  assert.equal(uuidParsed.id, 'f81d4fae-7dec-41d0-a765-00a0c91e6bf6');
+});
+
+test('duplicate post ids are rejected across documents', async t => {
+  const dir = await fixture(t);
+  await writeFile(path.join(dir, 'content/posts/first.md'), article().replace('slug: example', 'slug: first'));
+  await writeFile(path.join(dir, 'content/posts/second.md'), article().replace('slug: example', 'slug: second'));
+  await assert.rejects(loadContent(dir, config), /Duplicate document id "example"/);
 });
 test('template escaping, inheritance, and errors', () => {
   const env = templates(path.join(root, 'templates'));
@@ -79,7 +92,7 @@ test('featured articles curate the home page while /articles/ lists all publishe
   const dir = await fixture(t);
   // hello-world in fixture is featured: true
   // Create an unfeatured published article:
-  await writeFile(path.join(dir, 'content/posts/unfeatured.md'), `---\ntitle: Archive Only\nslug: archive-only\ndate: "2026-10-18"\ndescription: Archive only article\nfeatured: false\ndraft: false\n---\nBody.`);
+  await writeFile(path.join(dir, 'content/posts/unfeatured.md'), `---\nid: archive-only\ntitle: Archive Only\nauthor: "Giovanni Filardo"\nslug: archive-only\ndate: "2026-10-18"\ndescription: Archive only article\nfeatured: false\ndraft: false\n---\nBody.`);
   const result = await build(dir);
   assert.ok(result.has('articles/index.html'));
   // Home page includes featured hello-world but NOT unfeatured
@@ -105,7 +118,7 @@ test('failed builds preserve output; collisions and broken links are rejected', 
   await writeFile(path.join(dir, 'static/index.html'), 'collision');
   await assert.rejects(build(dir), /collision/);
   await unlink(path.join(dir, 'static/index.html'));
-  await writeFile(path.join(dir, 'content/posts/duplicate.md'), (await readFile(path.join(dir, 'content/posts/hello-world.md'), 'utf8')));
+  await writeFile(path.join(dir, 'content/posts/duplicate.md'), (await readFile(path.join(dir, 'content/posts/hello-world.md'), 'utf8')).replace('id: hello-world', 'id: duplicate-id'));
   await assert.rejects(build(dir), /duplicate route/);
   await writeFile(path.join(dir, '.build.lock'), '');
   await assert.rejects(build(dir), /Another build/);
@@ -174,7 +187,7 @@ test('series metadata requires a stable id, title and positive integer part', ()
 const seriesArticle = (slug, part, draft = false, title = 'Architecture & trade-offs') => article(
   `draft: ${draft}\nseries:\n  id: architecture\n  title: ${JSON.stringify(title)}\n  part: ${part}`,
   draft ? 'UNPUBLISHED BODY' : 'Published body'
-).replace('slug: example', `slug: ${slug}`).replace('title: Example', `title: ${slug}`);
+).replace('slug: example', `slug: ${slug}`).replace('title: Example', `title: ${slug}`).replace('id: example', `id: ${slug}`);
 
 test('series lists ordered parts, exposes only draft titles and links published neighbors', async t => {
   const dir = await fixture(t);
@@ -227,7 +240,7 @@ test('unlisted articles stay out of published series, home page and tag archives
   const seriesUnlistedArticle = (slug, part, unlisted = true) => article(
     `unlisted: ${unlisted}\nseries:\n  id: architecture\n  title: "Architecture & trade-offs"\n  part: ${part}`,
     'UNLISTED BODY'
-  ).replace('slug: example', `slug: ${slug}`).replace('title: Example', `title: ${slug}`);
+  ).replace('slug: example', `slug: ${slug}`).replace('title: Example', `title: ${slug}`).replace('id: example', `id: ${slug}`);
 
   await writeFile(path.join(dir, 'content/posts/first.md'), seriesArticle('first', 1, false));
   await writeFile(path.join(dir, 'content/posts/secret.md'), seriesUnlistedArticle('secret', 2, true));
@@ -283,7 +296,7 @@ test('tag collisions fail with both sources, including drafts, and preserve prev
   await writeFile(path.join(dir, 'content/posts/a.md'), article('tags: [API_design]'));
   const original = await build(dir);
   for (const tag of ['api_design', 'API-design']) {
-    await writeFile(path.join(dir, 'content/posts/b.md'), article(`tags: [${tag}]\ndraft: true`).replace('slug: example', 'slug: other'));
+    await writeFile(path.join(dir, 'content/posts/b.md'), article(`tags: [${tag}]\ndraft: true`).replace('slug: example', 'slug: other').replace('id: example', 'id: other'));
     await assert.rejects(build(dir), error => {
       assert.match(error.message, /b.md/);
       assert.match(error.message, /a.md/);
@@ -292,7 +305,7 @@ test('tag collisions fail with both sources, including drafts, and preserve prev
     });
     assert.equal(await readFile(path.join(dir, 'build/index.html'), 'utf8'), original.get('index.html'));
   }
-  await writeFile(path.join(dir, 'content/posts/b.md'), article('tags: [API_design]').replace('slug: example', 'slug: other'));
+  await writeFile(path.join(dir, 'content/posts/b.md'), article('tags: [API_design]').replace('slug: example', 'slug: other').replace('id: example', 'id: other'));
   const files = await build(dir);
   assert.match(files.get('tags/api-design/index.html'), /href="\/posts\/other\/"/);
   assert.match(files.get('tags/api-design/index.html'), /href="\/posts\/example\/"/);
@@ -438,8 +451,8 @@ test('diagram viewer loads only where needed and respects deployment base paths'
   const diagram = '```mermaid Overview\nflowchart LR\n A --> B\n```';
   const wideDiagram = '```mermaid#wide Wide\nflowchart LR\n A --> B\n```';
   await writeFile(path.join(dir, 'content/posts/diagram.md'), article('', diagram));
-  await writeFile(path.join(dir, 'content/posts/draft-diagram.md'), article('draft: true', diagram).replace('slug: example', 'slug: draft-diagram'));
-  await writeFile(path.join(dir, 'content/posts/wide-diagram.md'), article('draft: true', wideDiagram).replace('slug: example', 'slug: wide-diagram'));
+  await writeFile(path.join(dir, 'content/posts/draft-diagram.md'), article('draft: true', diagram).replace('slug: example', 'slug: draft-diagram').replace('id: example', 'id: draft-diagram'));
+  await writeFile(path.join(dir, 'content/posts/wide-diagram.md'), article('draft: true', wideDiagram).replace('slug: example', 'slug: wide-diagram').replace('id: example', 'id: wide-diagram'));
   const result = await build(dir, { basePath: '/blog' });
   for (const route of ['posts/example/index.html', 'preview/draft-diagram/index.html', 'preview/wide-diagram/index.html']) {
     assert.match(result.get(route), /<script src="\/blog\/js\/diagram-viewer\.js" defer><\/script>/);

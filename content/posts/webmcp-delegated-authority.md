@@ -1,5 +1,7 @@
 ---
+id: webmcp-delegated-authority
 title: "WebMCP: Who can confirm on the user’s behalf?"
+author: "Giovanni Filardo"
 slug: webmcp-delegated-authority
 date: "2026-10-31"
 description: "From a broad user request to a specific commitment: how applications can reason about delegated authority."

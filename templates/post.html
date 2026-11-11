@@ -2,7 +2,7 @@
 {% block content %}
 <article class="reading-page">
   <header class="page-heading"><a class="back-link" href="{% if page.preview %}{{ page.previewIndex }}{% else %}{{ articles }}{% endif %}">← {% if page.preview %}Draft previews{% else %}All articles{% endif %}</a><p class="eyebrow">{% if page.preview %}Draft preview{% else %}Perspectives{% endif %}</p><h1>{{ page.title }}</h1><p class="intro">{{ page.description }}</p>
-    <p class="meta"><time datetime="{{ page.date }}">{{ page.date }}</time>{% if page.updated %} · Updated <time datetime="{{ page.updated }}">{{ page.updated }}</time>{% endif %}</p>
+    <p class="meta"><time datetime="{{ page.date }}">{{ page.date }}</time>{% if page.updated %} · Updated <time datetime="{{ page.updated }}">{{ page.updated }}</time>{% endif %}{% if page.provenance %} · <span class="provenance-meta"><a href="#provenance" title="OpenTimestamps Bitcoin provenance">v{{ page.provenance.version }} {% if not page.provenance.isCurrent %}draft modified{% elif page.provenance.status == "confirmed" or page.provenance.status == "anchored" %}anchored{% else %}pending{% endif %}</a></span>{% endif %}</p>
     {% if page.tagLinks.length %}<ul class="tags" aria-label="Tags">{% for tag in page.tagLinks %}<li><a href="{{ tag.url }}">{{ tag.name }}</a></li>{% endfor %}</ul>{% endif %}
   </header>
   {% if page.motifSvg %}
@@ -34,6 +34,28 @@
     {% if page.seriesNav.previous %}<a rel="prev" href="{{ page.seriesNav.previous.url }}"><span class="meta">← Previous in series · Part {{ page.seriesNav.previous.part }}</span>{{ page.seriesNav.previous.title }}</a>{% endif %}
     {% if page.seriesNav.next %}<a rel="next" href="{{ page.seriesNav.next.url }}"><span class="meta">Next in series · Part {{ page.seriesNav.next.part }} →</span>{{ page.seriesNav.next.title }}</a>{% endif %}
   </nav>
+  {% endif %}
+  {% if page.provenance %}
+  <section id="provenance" class="provenance-colophon" aria-label="Cryptographic provenance">
+    <div class="provenance-inner">
+      <div class="provenance-header">
+        <span class="provenance-badge">Cryptographic Provenance</span>
+        <span class="provenance-version">v{{ page.provenance.version }}</span>
+      </div>
+      <p class="provenance-desc">
+        This article's exact text is anchored into the Bitcoin blockchain via OpenTimestamps.
+        {% if page.provenance.status == "confirmed" or page.provenance.status == "anchored" %}
+          Confirmed in Bitcoin block <a href="https://blockstream.info/block/{{ page.provenance.bitcoinBlock }}" target="_blank" rel="noopener">#{{ page.provenance.bitcoinBlock }}</a>{% if page.provenance.bitcoinBlockDate %} (<time datetime="{{ page.provenance.bitcoinBlockDate }}">{{ page.provenance.bitcoinBlockDate }}</time>){% endif %}.
+        {% else %}
+          Attested across calendar pools; pending confirmation in the next Bitcoin block.
+        {% endif %}
+        <a href="{{ page.provenance.proofUrl }}" class="provenance-download" download>Download OTS Proof (.ots)</a>
+      </p>
+      {% if not page.provenance.isCurrent %}
+      <p class="provenance-drift">Note: Content has unanchored modifications since version {{ page.provenance.version }}.</p>
+      {% endif %}
+    </div>
+  </section>
   {% endif %}
   <div class="article-end"><span aria-hidden="true">■</span><a class="text-link" href="{{ home }}">Back to the writing ↗</a></div>
 </article>

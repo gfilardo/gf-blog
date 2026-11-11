@@ -1,0 +1,209 @@
+{
+  "version": 1,
+  "articles": {
+    "architecting-the-semantic-essay": {
+      "currentPath": "content/posts/architecting-the-semantic-essay.md",
+      "versions": [
+        {
+          "version": 1,
+          "path": "content/posts/architecting-the-semantic-essay.md",
+          "fileHash": "2d2a79b5b49a79eec6051ad87988523e5fa018bffb648abf1a0ea0bbca6cc88a",
+          "proofFile": "static/proofs/architecting-the-semantic-essay/v1.ots",
+          "otsUrl": "/proofs/architecting-the-semantic-essay/v1.ots",
+          "stampedAt": "2026-11-11T11:29:26.317Z",
+          "status": "anchored",
+          "gitCommit": "527965d8ccc5fadf67d8488b7ba5b3b3c3d11387",
+          "bitcoinBlock": 975431,
+          "bitcoinBlockTime": null
+        }
+      ]
+    },
+    "computational-colophons": {
+      "currentPath": "content/posts/computational-colophons.md",
+      "versions": [
+        {
+          "version": 1,
+          "path": "content/posts/computational-colophons.md",
+          "fileHash": "6de623de58ca5d5c6e2a1ab3d60b1ac7727b39849ef0d6ce111551b4d5bed9c3",
+          "proofFile": "static/proofs/computational-colophons/v1.ots",
+          "otsUrl": "/proofs/computational-colophons/v1.ots",
+          "stampedAt": "2026-11-11T11:29:27.281Z",
+          "status": "anchored",
+          "gitCommit": "8d9edca5fadce423612beacdac5df27b711bb584",
+          "bitcoinBlock": 975431,
+          "bitcoinBlockTime": null
+        }
+      ]
+    },
+    "decentralized-timestamps-pt2": {
+      "currentPath": "content/posts/decentr-timestamps-implement-pipelines-and-verify.md",
+      "versions": [
+        {
+          "version": 1,
+          "path": "content/posts/decentr-timestamps-implement-pipelines-and-verify.md",
+          "fileHash": "f5d3c8e7bb431d5768ef60310b81eb98a953f2883415b08695db60fcc60a93bc",
+          "proofFile": "static/proofs/decentralized-timestamps-pt2/v1.ots",
+          "otsUrl": "/proofs/decentralized-timestamps-pt2/v1.ots",
+          "stampedAt": "2026-11-11T11:29:28.342Z",
+          "status": "anchored",
+          "gitCommit": "0d2100d2b8a2e80451d52c07c89e47289f687663",
+          "bitcoinBlock": 975431,
+          "bitcoinBlockTime": null
+        }
+      ]
+    },
+    "decentralized-timestamps-pt1": {
+      "currentPath": "content/posts/decentr-timestamps-proving-existence-and-authorship.md",
+      "versions": [
+        {
+          "version": 1,
+          "path": "content/posts/decentr-timestamps-proving-existence-and-authorship.md",
+          "fileHash": "16efa7abadaf4f86969bacbf0f7db2acce22d88927760d01d82b13e71903281b",
+          "proofFile": "static/proofs/decentralized-timestamps-pt1/v1.ots",
+          "otsUrl": "/proofs/decentralized-timestamps-pt1/v1.ots",
+          "stampedAt": "2026-11-11T11:29:29.299Z",
+          "status": "anchored",
+          "gitCommit": "0d2100d2b8a2e80451d52c07c89e47289f687663",
+          "bitcoinBlock": 975431,
+          "bitcoinBlockTime": null
+        }
+      ]
+    },
+    "how-this-blog-is-built": {
+      "currentPath": "content/posts/how-this-blog-is-built.md",
+      "versions": [
+        {
+          "version": 1,
+          "path": "content/posts/how-this-blog-is-built.md",
+          "fileHash": "2105429f90f8cc6f965c1a64a077f2c61aeb684a18db2b941efc48dd80dc620f",
+          "proofFile": "static/proofs/how-this-blog-is-built/v1.ots",
+          "otsUrl": "/proofs/how-this-blog-is-built/v1.ots",
+          "stampedAt": "2026-11-11T11:29:30.397Z",
+          "status": "anchored",
+          "gitCommit": "1b7ec210d4ba69ec47aaa88a72cf0175c124e151",
+          "bitcoinBlock": 975431,
+          "bitcoinBlockTime": null
+        }
+      ]
+    },
+    "http-query-can-i-just-use-it": {
+      "currentPath": "content/posts/http-query-can-i-just-use-it.md",
+      "versions": [
+        {
+          "version": 1,
+          "path": "content/posts/http-query-can-i-just-use-it.md",
+          "fileHash": "75eda585cceea0064c69f49f0690735596027fed1b2807fc04c52418cdc095ee",
+          "proofFile": "static/proofs/http-query-can-i-just-use-it/v1.ots",
+          "otsUrl": "/proofs/http-query-can-i-just-use-it/v1.ots",
+          "stampedAt": "2026-11-11T11:29:31.326Z",
+          "status": "anchored",
+          "gitCommit": "1b7ec210d4ba69ec47aaa88a72cf0175c124e151",
+          "bitcoinBlock": 975431,
+          "bitcoinBlockTime": null
+        }
+      ]
+    },
+    "http-query-live-results-with-sse": {
+      "currentPath": "content/posts/http-query-live-results-with-sse.md",
+      "versions": [
+        {
+          "version": 1,
+          "path": "content/posts/http-query-live-results-with-sse.md",
+          "fileHash": "1e4422106ee2f7d4d2d1e7dfa7a8ba614367d4a0dab1348b11024a317fab75fb",
+          "proofFile": "static/proofs/http-query-live-results-with-sse/v1.ots",
+          "otsUrl": "/proofs/http-query-live-results-with-sse/v1.ots",
+          "stampedAt": "2026-11-11T11:29:32.309Z",
+          "status": "anchored",
+          "gitCommit": "d92b2f3666989ae19b46e74c8578bfd20139a5b8",
+          "bitcoinBlock": 975431,
+          "bitcoinBlockTime": null
+        }
+      ]
+    },
+    "webmcp-agent-ready-transaction": {
+      "currentPath": "content/posts/webmcp-agent-ready-transaction.md",
+      "versions": [
+        {
+          "version": 1,
+          "path": "content/posts/webmcp-agent-ready-transaction.md",
+          "fileHash": "76034f66053bb321e2dde1fe62360b1c8c0a319e42ba59ad7c30966f284b1e91",
+          "proofFile": "static/proofs/webmcp-agent-ready-transaction/v1.ots",
+          "otsUrl": "/proofs/webmcp-agent-ready-transaction/v1.ots",
+          "stampedAt": "2026-11-11T11:29:33.315Z",
+          "status": "anchored",
+          "gitCommit": "d92b2f3666989ae19b46e74c8578bfd20139a5b8",
+          "bitcoinBlock": 975431,
+          "bitcoinBlockTime": null
+        }
+      ]
+    },
+    "webmcp-agent-shortcuts-and-unintentional-dark-patterns": {
+      "currentPath": "content/posts/webmcp-agent-shortcuts-and-unintentional-dark-patterns.md",
+      "versions": [
+        {
+          "version": 1,
+          "path": "content/posts/webmcp-agent-shortcuts-and-unintentional-dark-patterns.md",
+          "fileHash": "27342faa1d6b3e002db725efa6c3943b69c98e78ebe76fa918f20db94013d407",
+          "proofFile": "static/proofs/webmcp-agent-shortcuts-and-unintentional-dark-patterns/v1.ots",
+          "otsUrl": "/proofs/webmcp-agent-shortcuts-and-unintentional-dark-patterns/v1.ots",
+          "stampedAt": "2026-11-11T11:29:34.308Z",
+          "status": "anchored",
+          "gitCommit": "ab60afad92e31d6c6a7c90f10988e0d5a11741b6",
+          "bitcoinBlock": 975431,
+          "bitcoinBlockTime": null
+        }
+      ]
+    },
+    "webmcp-delegated-authority": {
+      "currentPath": "content/posts/webmcp-delegated-authority.md",
+      "versions": [
+        {
+          "version": 1,
+          "path": "content/posts/webmcp-delegated-authority.md",
+          "fileHash": "b579916704429c89f710ac84767a44ba6cae6e54a52f79a3a119496b23b15caa",
+          "proofFile": "static/proofs/webmcp-delegated-authority/v1.ots",
+          "otsUrl": "/proofs/webmcp-delegated-authority/v1.ots",
+          "stampedAt": "2026-11-11T11:29:35.412Z",
+          "status": "anchored",
+          "gitCommit": "16d42d6e84775e8f0de0bcb0f90af0cb97110ef2",
+          "bitcoinBlock": 975431,
+          "bitcoinBlockTime": null
+        }
+      ]
+    },
+    "webmcp-people-and-agents": {
+      "currentPath": "content/posts/webmcp-people-and-agents.md",
+      "versions": [
+        {
+          "version": 1,
+          "path": "content/posts/webmcp-people-and-agents.md",
+          "fileHash": "654449159452111e0bbf6df66a125084705eb8642ade3b941e3248bc7a3be7a0",
+          "proofFile": "static/proofs/webmcp-people-and-agents/v1.ots",
+          "otsUrl": "/proofs/webmcp-people-and-agents/v1.ots",
+          "stampedAt": "2026-11-11T11:29:36.320Z",
+          "status": "anchored",
+          "gitCommit": "ab60afad92e31d6c6a7c90f10988e0d5a11741b6",
+          "bitcoinBlock": 975431,
+          "bitcoinBlockTime": null
+        }
+      ]
+    },
+    "webmcp-zero-trust-ui-and-cryptographic-consent": {
+      "currentPath": "content/posts/webmcp-zero-trust-ui-and-cryptographic-consent.md",
+      "versions": [
+        {
+          "version": 1,
+          "path": "content/posts/webmcp-zero-trust-ui-and-cryptographic-consent.md",
+          "fileHash": "4754fbd36790e6222538ea14653b16cd2020fdebee90569344a84721f62c4fb0",
+          "proofFile": "static/proofs/webmcp-zero-trust-ui-and-cryptographic-consent/v1.ots",
+          "otsUrl": "/proofs/webmcp-zero-trust-ui-and-cryptographic-consent/v1.ots",
+          "stampedAt": "2026-11-11T11:29:37.314Z",
+          "status": "anchored",
+          "gitCommit": "7db348fc99f9a686758e6fd411c0bd25a5f0853a",
+          "bitcoinBlock": 975431,
+          "bitcoinBlockTime": null
+        }
+      ]
+    }
+  }
+}

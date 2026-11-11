@@ -1,5 +1,7 @@
 ---
+id: webmcp-agent-ready-transaction
 title: "WebMCP: Building an agent-ready transaction"
+author: "Giovanni Filardo"
 slug: webmcp-agent-ready-transaction
 date: "2026-11-01"
 description: "A proposed quote, approval, and booking architecture that preserves user authority through execution."

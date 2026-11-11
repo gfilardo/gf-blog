@@ -1,5 +1,7 @@
 ---
+id: http-query-live-results-with-sse
 title: "Live updates with HTTP QUERY and server-sent events"
+author: "Giovanni Filardo"
 slug: http-query-live-results-with-sse
 date: "2026-10-28"
 description: "From a JSON filter to a live response: QUERY, SSE, EventSource, and what happens when a stream disconnects."

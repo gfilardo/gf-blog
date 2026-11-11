@@ -1,5 +1,7 @@
 ---
+id: how-this-blog-is-built
 title: How this blog is built
+author: "Giovanni Filardo"
 slug: how-this-blog-is-built
 date: "2026-10-23"
 description: Architecture, deterministic builds, and design principles behind a handcrafted personal static site.

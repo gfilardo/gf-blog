@@ -1,5 +1,7 @@
 ---
+id: webmcp-zero-trust-ui-and-cryptographic-consent
 title: "WebMCP: The Zero-Trust UI: Binding Agent Reality to Cryptographic Consent"
+author: "Giovanni Filardo"
 slug: webmcp-zero-trust-ui-and-cryptographic-consent
 date: "2026-11-02"
 description: "Why platforms must treat DOM frontends as untrusted client environments, establishing clear liability lines and anchoring high-stakes actions in WebAuthn hardware consent."

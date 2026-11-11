@@ -1,5 +1,7 @@
 ---
+id: architecting-the-semantic-essay
 title: "Architecting the semantic essay: reading flow and complex interaction"
+author: "Giovanni Filardo"
 slug: architecting-the-semantic-essay
 date: "2026-11-08"
 description: Resolving the architectural tension between the quiet continuum of long-form essay reading and the demands of technical diagrams, multi-dimensional models, and living interactions.

@@ -1,5 +1,7 @@
 ---
+id: decentralized-timestamps-pt1
 title: "Proving existence and authorship: decentralized timestamps and the longevity of proof"
+author: "Giovanni Filardo"
 slug: proving-existence-and-authorship-on-decentralized-ledgers
 date: "2026-11-09"
 description: "A first-principles guide to proving when a digital document existed and who created it, decoupling identity from crypto wallets, and evaluating ledger longevity."
@@ -126,7 +128,20 @@ This produces a clean separation of concerns:
 
 Crucially, off-chain signing is necessary **specifically because of aggregation**. In OpenTimestamps, the single on-chain Bitcoin transaction is funded and signed by the calendar server operator, not by your personal wallet. Because the blockchain transaction no longer carries your signature, the Bitcoin ledger proves only that the Merkle root existed by that block—it has no knowledge of who authored the leaf document. An off-chain signature (such as an SSH key signature or signed Git commit) restores the missing identity binding without dragging back the financial cost, hot-wallet exposure, or privacy loss of direct blockchain transactions.
 
-Because thousands of documents share the same on-chain transaction, the marginal cost to the document author is **zero**. There is no need to hold cryptocurrency, manage a wallet, or pay gas fees. The resulting proof is a tiny, detached receipt (`.ots`, typically under 1 KB) that contains only the specific Merkle path connecting the author's initial hash to the Bitcoin block header.
+### The zero-fee economics: why authors pay nothing
+
+A frequent question from engineering leaders evaluating decentralized timestamps is: *Do I need a corporate crypto wallet, and how much will transaction fees cost?*
+
+In OpenTimestamps, the financial cost to authors is **zero**:
+
+* **Zero cryptocurrency or wallets**: Authors never purchase Bitcoin, handle private keys with funds, or manage seed phrases.
+* **Zero account overhead**: There are no API keys, accounts, or credit card subscriptions. Stamping is simply an unauthenticated HTTP `POST` sending 32 binary bytes to public calendar pools (`alice.btc.calendar.opentimestamps.org`, `a.pool.opentimestamps.org`, etc.).
+* **Batching subsidizes the blockchain fee**: The calendar servers combine incoming digests into off-chain Merkle trees. Every few hours, the calendar operator broadcasts a single Bitcoin transaction with the Merkle root in an `OP_RETURN` script.
+* **Public good funding**: The single Bitcoin transaction fee is paid by the calendar operators, funded by Bitcoin foundation grants and community sponsorships as public infrastructure. Because that single fee is amortized over hundreds of thousands of documents, the marginal cost per document is zero.
+
+The only operational trade-off is **batching latency**. Instead of paying mining fees for instant 10-minute block inclusion, authors receive an immediate "pending" receipt, and the Bitcoin proof anchors permanently a few hours later when the calendar's batch transaction is mined. For technical writing, software releases, and architecture specifications, trading a few hours of latency for zero financial cost and zero wallet friction is an ideal operational trade-off.
+
+The resulting proof is a tiny, detached receipt (`.ots`, typically under 1 KB) that contains only the specific Merkle path connecting the author's initial hash to the Bitcoin block header.
 
 ### Is anteriority alone enough? Why not just put your name in the text?
 
