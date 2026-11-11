@@ -73,7 +73,7 @@ flowchart LR
     subgraph OUTPUT["Dual-Reality Presentation"]
         direction TB
         LEVEL0["Level 0: Archival & Zero-JS\n(Full prose scale, semantic tables, inline SVG)"]
-        LEVEL1["Level 1: Living Apparatus\n(Progressive client hydration, interactive canvases)"]
+        LEVEL1["Level 1: Interactive Layer\n(Progressive client hydration, interactive canvases)"]
     end
 
     INPUT --> ENGINE
@@ -327,4 +327,4 @@ Extending Markdown to accommodate complex technical essays without corrupting it
 4. **Progressive enhancement as an epistemological guarantee**: Every interactive model must possess an authentic static fallback that preserves the complete argument in feed readers, terminal pagers, and archival print.
 5. **Layout breakouts are cognitive punctuation**: Symmetrical expansions provide spatial breathing room for high-density models, then seamlessly release the eye back to the reading line.
 
-By pairing quiet semantic conventions with strict compile-time validation and progressive enhancement, this artifact resolves the tension between the essay and the apparatus. Markdown remains what it was always meant to be: an enduring, joyful medium for deep human thought.
+By pairing quiet semantic conventions with strict compile-time validation and progressive enhancement, this approach resolves the tension between the essay and interactivity. Markdown remains what it was always meant to be: an enduring, joyful medium for deep human thought.
