@@ -16,7 +16,7 @@ draft: false
 unlisted: true
 ---
 
-In the first part of this series (*Proving existence and authorship*), we established the theoretical principles of decentralized timestamps: decoupling author identity from crypto wallets via digital signatures, and anchoring document hashes into the Bitcoin blockchain using OpenTimestamps (OTS) Merkle aggregation.
+In the first part of this series (*Proving existence and authorship*), we established the theoretical principles of decentralized timestamps: anchoring document hashes into the Bitcoin blockchain using OpenTimestamps (OTS) Merkle aggregation. We also established that for written essays and technical specifications, managing detached private key signatures introduces an unnecessary two-step verification penalty for readers. Instead, embedding the author's identity directly into validated frontmatter (`author: Giovanni Filardo`) and anchoring the exact raw bytes achieves airtight protection against plagiarism and prior-art theft with friction-free, single-step verification.
 
 Moving from cryptographic theory to a functioning software pipeline, however, exposes a fundamental systems engineering challenge: **an impedance mismatch in time**.
 
@@ -62,64 +62,48 @@ The architectural rule is straightforward: **Stamping and upgrading are asynchro
 
 ---
 
-## The canonicalization trap
+## The canonicalization trap vs. exact byte hashing
 
-Before hashing any digital document, you must determine exactly *what bytes* are being stamped.
+Before hashing any digital document, you must answer a deceptively simple question: **exactly what bytes are being stamped?**
 
-If you pass a raw file directly to a hashing function:
+A common instinct in publishing systems is to attempt "smart" normalization:
+1. Stripping YAML/JSON frontmatter so that taxonomy or tag changes don't alter the body hash.
+2. Stripping trailing whitespace from lines.
+3. Converting line endings (`\r\n` to `\n`).
 
-```bash
-sha256sum content/posts/my-essay.md
-```
+While intuitive, this normalization introduces **the canonicalization trap**:
 
-You risk falling into **the canonicalization trap**.
+* **Markdown syntax corruption**: In standard Markdown, two trailing spaces at the end of a line indicate a hard line break (`<br>`). Stripping trailing whitespace mutates the formatting and semantics of the document.
+* **Verification brittleness**: If you normalize with an ad-hoc regular expression, anyone who wishes to verify the proof offline in the future must execute that exact same regex logic. If their script strips whitespace slightly differently, the computed SHA-256 hash will fail to match the `.ots` proof.
+* **Loss of metadata integrity**: The publication date, series tags, and article title in the frontmatter are themselves substantive claims of the published work. Normalizing them away removes them from cryptographic protection.
 
-In many publishing workflows, documents contain two distinct layers:
-1. **Presentation metadata**: Formatting headers, publication flags, layout parameters, tags, and category taxonomy (such as YAML frontmatter).
-2. **Authorial content**: The actual prose, specification, code examples, or mathematical formulas that form the substance of the work.
-
-```mermaid#wide The canonicalization process: separating volatile metadata from invariant prose.
+```mermaid#wide The exact byte hashing pipeline versus fragile normalization.
 flowchart LR
-    subgraph RAW["Raw Document File"]
-        FM["---<br/>title: My Essay<br/>tags: ['tech']<br/>draft: false<br/>---"]
-        BODY["# Introduction<br/><br/>The continuous reading flow..."]
+    subgraph FRAGILE["Fragile Approach: Ad-Hoc Canonicalization"]
+        direction TB
+        RAW1["Raw Markdown File"] --> REGEX["Ad-hoc Regex Normalizer<br/>(Strip frontmatter, trim spaces)"]
+        REGEX --> HASH_FRAG["Normalized Hash"]
+        HASH_FRAG -.-> FAIL["❌ Verification requires matching regex code"]
     end
 
-    subgraph ENGINE["Canonicalization Engine"]
-        STRIP["1. Strip frontmatter delimiters (---...---)"]
-        NORM_EOL["2. Normalize line endings (\r\n → \n)"]
-        TRIM["3. Strip trailing whitespace"]
+    subgraph ROBUST["Robust Approach: Exact Byte Immutability"]
+        direction TB
+        RAW2["Exact Source File / Git Blob"] --> SHA["SHA-256 (Raw Bytes)"]
+        SHA --> OTS["OpenTimestamps (.ots)"]
+        OTS -.-> PASS["✔ Verifiable via standard 'sha256sum'"]
     end
-
-    subgraph HASHES["Dual Cryptographic Outputs"]
-        CANON_HASH["SHA-256 Canonical Body Hash<br/>(Immutable Temporal Anchor)"]
-        META_HASH["Metadata Fingerprint<br/>(Local Cache Tracking)"]
-    end
-
-    RAW --> ENGINE
-    ENGINE --> CANON_HASH
-    FM --> META_HASH
 ```
 
-Consider what happens if you correct a minor typo in your document metadata three months after publication—for instance, updating a category tag or fixing a typo in a description.
-
-If you stamped the raw file, changing that single byte produces a completely different SHA-256 digest. Your existing `.ots` proof file immediately fails verification, and your cryptographic proof of existence for the original content is invalidated.
-
-### Designing a canonicalization normalizer
-To ensure that benign presentation or metadata edits do not break historical timestamps, the stamping pipeline passes source files through a deterministic normalization step before computing the digest:
-
-1. **Metadata separation**: Strip leading YAML or JSON frontmatter blocks using an explicit boundary delimiter (`^---[\s\S]*?---\r?\n`).
-2. **Line-ending normalization**: Convert all Windows Carriage Return + Line Feed pairs (`\r\n`) to standard UNIX Line Feeds (`\n`).
-3. **Whitespace sanitization**: Strip trailing whitespace at the ends of lines and normalize multiple consecutive blank lines.
-4. **Encoding enforcement**: Ensure all text conforms to standard UTF-8 Unicode Normalization Form C (NFC).
-
-The output is the **canonical content payload**. This normalized string is the exact byte sequence passed to your digital signature utility and the OpenTimestamps client. You can safely reorganize site navigation, update tags, or adjust layout schemas without invalidating your Bitcoin anchor.
+The robust solution is **exact byte hashing**:
+* Hash the source file exactly as committed.
+* If you correct a typo or update frontmatter tags three months later, that change constitutes a legitimate **new revision**.
+* Rather than pretending the revised document is identical to the original, the pipeline generates a new `.ots` receipt for the new version while preserving the historical proof for the previous version. The original proof remains 100% valid for the original bytes forever.
 
 ---
 
 ## The local manifest state machine
 
-To bridge the gap between instant local edits and multi-hour blockchain confirmation, the repository maintains a lightweight local state machine via a JSON file: `timestamps-manifest.json`.
+To bridge the gap between instant local edits and multi-hour blockchain confirmation, the repository maintains a lightweight local index via a JSON file: `timestamps-manifest.json`.
 
 ```mermaid#wide State transition lifecycle of an artifact in the manifest.
 stateDiagram-v2
@@ -127,25 +111,24 @@ stateDiagram-v2
     UNTRACKED --> PENDING: 'ots stamp' executed (Initial receipt created)
     PENDING --> PENDING: 'ots upgrade' attempted (Block not yet confirmed)
     PENDING --> CONFIRMED: 'ots upgrade' succeeds (Merkle root confirmed on Bitcoin L1)
-    CONFIRMED --> REVISED: Content modified (Canonical hash mismatch)
-    REVISED --> PENDING: New stamp generated (Prior proof retained in history)
-    CONFIRMED --> CONFIRMED: Metadata updated (Canonical hash unchanged, no-op)
+    CONFIRMED --> REVISED: Content modified (New SHA-256 digest)
+    REVISED --> PENDING: New stamp generated (Prior version retained in history)
 ```
 
 ### The manifest schema
-The manifest tracks the content hash, proof location, and confirmation status for every document:
+The manifest tracks the content hash, versioned proof path, and confirmation status for every document:
 
 ```json
 {
   "version": 1,
   "documents": {
     "system-architecture-spec": {
-      "canonical_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-      "proof_file": "proofs/system-architecture-spec.ots",
+      "latest_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
       "status": "confirmed",
+      "proof_file": "proofs/system-architecture-spec/v1.ots",
       "bitcoin_block": 870142,
-      "stamped_at": "2026-11-09T10:14:00Z",
-      "confirmed_at": "2026-11-09T13:22:00Z",
+      "stamped_at": "2024-11-13T10:48:00Z",
+      "confirmed_at": "2024-11-13T14:15:00Z",
       "revisions": []
     }
   }
@@ -155,9 +138,9 @@ The manifest tracks the content hash, proof location, and confirmation status fo
 ### The four operational states:
 
 1. **`UNTRACKED`**: A newly authored document. The manifest has no record for this identifier.
-2. **`PENDING`**: The initial stamp has been created. The file `proofs/<id>.ots` contains the calendar server's cryptographic receipt, but the Merkle root has not yet been confirmed in a Bitcoin block.
+2. **`PENDING`**: The initial stamp has been created. The file `proofs/<slug>/<version>.ots` contains the calendar server's cryptographic receipt, but the Merkle root has not yet been confirmed in a Bitcoin block.
 3. **`CONFIRMED`**: An upgrade operation has fetched the final Merkle branch connecting the file's hash to a confirmed Bitcoin block header. The `.ots` file is now fully self-contained and verifiable offline.
-4. **`REVISED`**: When an author substantially updates the content, the canonical hash changes. The manifest preserves the old hash and `.ots` proof in an append-only `revisions` list (maintaining verifiable prior art for the original version) and transitions the new text into a fresh `PENDING` cycle.
+4. **`REVISED`**: When an author updates the content, the file hash changes. The manifest preserves the old hash and `.ots` proof in an append-only `revisions` list (retaining verifiable prior art for the original version) and transitions the new version into a fresh `PENDING` cycle.
 
 ---
 
@@ -173,21 +156,21 @@ node scripts/provenance/stamp.mjs content/posts/my-spec.md
 ```
 
 The script executes the following deterministic steps:
-1. Reads the source file and extracts the canonical content body.
-2. Generates the SHA-256 digest of the canonical body.
-3. Inspects `timestamps-manifest.json`:
+1. Computes the SHA-256 digest of the raw source file bytes.
+2. Inspects `timestamps-manifest.json`:
    - If the hash matches an existing `CONFIRMED` record, it reports that the document is already anchored and exits without network calls.
    - If the hash is new or modified, it calls the OpenTimestamps CLI:
      ```bash
-     ots stamp --output proofs/my-spec.ots <canonical_stream>
+     ots stamp content/posts/my-spec.md
      ```
-4. Records the state as `PENDING` in the manifest with the current timestamp.
+   - Moves the generated `content/posts/my-spec.md.ots` into the versioned proof directory (`proofs/my-spec/<version>.ots`).
+3. Records the state as `PENDING` in the manifest with the current timestamp.
 
 ### 2. The upgrade cycle
 A few hours later—or via a scheduled local task—run the upgrade command:
 
 ```bash
-ots upgrade proofs/*.ots
+ots upgrade proofs/**/*.ots
 ```
 
 The OpenTimestamps client contacts the calendar servers, checks whether the aggregated Merkle root has been included in a mined Bitcoin block, and serializes the complete Merkle path back into the `.ots` file.
@@ -211,7 +194,7 @@ OpenTimestamps avoids this entirely:
 * **Microscopic storage footprint**: A finalized `.ots` proof file is approximately **400 to 700 bytes** in size. Stamping an entire library of 1,000 comprehensive specifications or essays adds less than **600 kilobytes** of binary data to your repository—smaller than a single uncompressed screenshot.
 * **Git attributes**: To prevent Git from modifying line endings inside binary proof files, declare them in `.gitattributes`:
   ```gitattributes
-  proofs/*.ots binary
+  proofs/**/*.ots binary
   ```
 
 ---
@@ -220,29 +203,30 @@ OpenTimestamps avoids this entirely:
 
 The defining strength of this architecture is that verification is completely self-contained. Anyone can verify the anteriority and authenticity of a document without an account, without an API key, and without contacting any third-party service.
 
-```mermaid#wide The independent verification pipeline.
-flowchart TD
-    subgraph INPUTS["Verification Inputs"]
-        DOC["Original Document File"]
-        PROOF["Detached Proof (.ots)"]
+When you execute `ots verify`, the client evaluates the proof through two distinct stages:
+
+```mermaid#wide The two-stage verification path: from document hash to Bitcoin block header.
+flowchart LR
+    subgraph STAGE1["Stage 1: Off-Chain Merkle Path"]
+        direction TB
+        DOC["Local Document"] -->|SHA-256| LEAF["Document Hash"]
+        LEAF --> TREE["Calendar Merkle Tree<br/>(Traversing sibling hashes in .ots)"]
+        TREE --> ROOT["Calendar Merkle Root"]
     end
 
-    subgraph VERIFY["Offline Verification Engine"]
-        CANON["Canonicalizer (Extract body)"]
-        HASH["Compute SHA-256 Digest"]
-        OTS_CLI["OpenTimestamps Client (ots verify)"]
-        BTC_HEADERS["Bitcoin Block Header Chain"]
+    subgraph STAGE2["Stage 2: On-Chain Bitcoin Proof"]
+        direction TB
+        ROOT --> TX["Bitcoin Transaction<br/>(OP_RETURN payload)"]
+        TX --> BLOCK_TREE["Bitcoin Block Transaction Tree"]
+        BLOCK_TREE --> HEADER["80-Byte Block Header<br/>(Verified Proof-of-Work)"]
     end
 
-    subgraph RESULT["Mathematical Proof"]
-        OUT["Confirmed: Existed in Bitcoin Block #870142<br/>Header Timestamp: 2026-11-09T13:22:00Z"]
-    end
-
-    DOC --> CANON --> HASH
-    PROOF & HASH --> OTS_CLI
-    BTC_HEADERS --> OTS_CLI
-    OTS_CLI --> OUT
+    STAGE1 --> STAGE2
 ```
+
+1. **Stage 1 (Off-Chain Merkle Path)**: The `.ots` file contains a serialized recipe of operations (sibling hashes and concatenation rules). The verifier computes the SHA-256 digest of your local document, combines it step-by-step with intermediate sibling hashes from the receipt, and calculates the calendar server's aggregated Merkle root. If a single byte of the document was modified, the calculated root will fail to match.
+2. **Stage 2 (On-Chain Bitcoin Proof)**: The upgraded receipt continues the cryptographic path into Bitcoin. It proves how the calendar Merkle root was embedded into a transaction's `OP_RETURN` script, and how that transaction connects through the block's internal transaction tree to the `merkle_root` recorded in the **80-byte Bitcoin block header**.
+3. **The Proof-of-Work Check**: The client verifies that the block header meets Bitcoin's Proof-of-Work difficulty target and belongs to the valid blockchain. Because Bitcoin headers are compact (under 70 MB for the entire chain since 2009), this check can be performed completely offline on a local machine.
 
 ### Reproducible verification steps
 To audit a stamped document independently:
@@ -250,21 +234,15 @@ To audit a stamped document independently:
 ```bash
 # 1. Obtain the document and the detached proof
 curl -sO https://giovannifilardo.com/content/posts/system-architecture-spec.md
-curl -sO https://giovannifilardo.com/proofs/system-architecture-spec.ots
+curl -sO https://giovannifilardo.com/proofs/system-architecture-spec/v1.ots
 
-# 2. Extract the canonical payload (strip frontmatter)
-node -e '
-  const fs = require("fs");
-  const raw = fs.readFileSync("system-architecture-spec.md", "utf8");
-  const body = raw.replace(/^---[\s\S]*?---\r?\n/, "").replace(/\r\n/g, "\n").trim();
-  fs.writeFileSync("canonical.txt", body);
-'
-
-# 3. Verify against the Bitcoin blockchain
-ots verify system-architecture-spec.ots -f canonical.txt
+# 2. Verify directly against the Bitcoin blockchain
+ots verify v1.ots -f system-architecture-spec.md
 ```
 
 If the verification succeeds, the OpenTimestamps client traverses the Merkle path embedded in the `.ots` file, matches the computed root against a confirmed Bitcoin block header, and outputs the exact block height and timestamp.
+
+Crucially, because the author's identity is declared directly in the frontmatter (`author: Giovanni Filardo`) and committed into the raw hashed bytes, **verification requires only a single command**. The auditor does not need to retrieve a public key from an external keyserver, import an X.509 certificate, or run a detached signature check. The text, metadata, and attribution are all verified simultaneously against Bitcoin consensus.
 
 The auditor does not need to trust the author, the host web server, or any commercial certificate authority. The proof is mathematically self-evident, anchored to the energy and consensus of the Bitcoin network.
 
@@ -274,7 +252,7 @@ The auditor does not need to trust the author, the host web server, or any comme
 
 By treating decentralized timestamps as generic cryptographic anchors, we achieve a reliable, low-overhead method for proving digital priority:
 
-1. **Decouple authorship from financial transactions**: Use asymmetric key signatures to prove identity without managing cryptocurrency wallets or paying gas fees.
+1. **Decouple authorship from financial transactions**: Use asymmetric key signatures or Git commit provenance to prove identity without managing cryptocurrency wallets or paying gas fees.
 2. **Isolate build systems from asynchronous latency**: Handle stamping and upgrading as out-of-band operational cycles, keeping build pipelines deterministic, fast, and offline.
-3. **Normalize content before hashing**: Separate volatile metadata from invariant text so that formatting and taxonomy adjustments do not invalidate historical proofs.
+3. **Anchor exact bytes and version revisions**: Stamp exact immutable files or Git commits to avoid fragile normalization, and preserve historical proofs across revisions.
 4. **Enable trustless verification**: Provide detached proofs that any third party can verify independently using open-source tools.
