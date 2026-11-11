@@ -45,7 +45,7 @@
       <p class="provenance-desc">
         This article's exact text is anchored into the Bitcoin blockchain via OpenTimestamps.
         {% if page.provenance.status == "confirmed" or page.provenance.status == "anchored" %}
-          Confirmed in Bitcoin block <a href="https://blockstream.info/block/{{ page.provenance.bitcoinBlock }}" target="_blank" rel="noopener">#{{ page.provenance.bitcoinBlock }}</a>{% if page.provenance.bitcoinBlockDate %} (<time datetime="{{ page.provenance.bitcoinBlockDate }}">{{ page.provenance.bitcoinBlockDate }}</time>){% endif %}.
+          Confirmed in Bitcoin block <a href="https://mempool.space/block/{{ page.provenance.bitcoinBlock }}" target="_blank" rel="noopener">#{{ page.provenance.bitcoinBlock }}</a>{% if page.provenance.bitcoinBlockDate %} (<time datetime="{{ page.provenance.bitcoinBlockDate }}">{{ page.provenance.bitcoinBlockDate }}</time>){% endif %}.
         {% else %}
           Attested across calendar pools; pending confirmation in the next Bitcoin block.
         {% endif %}
