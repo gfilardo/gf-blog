@@ -265,6 +265,7 @@ export async function loadContent(root, site) {
               bitcoinBlock: latest.bitcoinBlock || null,
               bitcoinBlockDate: latest.bitcoinBlockTime ? latest.bitcoinBlockTime.slice(0, 10) : null,
               proofUrl: urls(site).local(`/proofs/${doc.id}/v${latest.version}.ots`),
+              fileHash: latest.fileHash,
               isCurrent: latest.fileHash === currentHash
             };
           }

@@ -22,7 +22,7 @@ export function render(root, site, documents) {
   for (const doc of documents) {
     if (routes.has(doc.route)) throw new Error(`${doc.source}: duplicate route ${doc.route}`);
     routes.add(doc.route);
-    if (doc.kind === 'page' && ['articles', 'posts', 'tags', 'assets', 'css', 'js', 'fonts', 'preview', 'motifs'].includes(doc.slug)) throw new Error(`${doc.source}: reserved page slug ${doc.slug}`);
+    if (doc.kind === 'page' && ['articles', 'posts', 'tags', 'assets', 'css', 'js', 'fonts', 'preview', 'motifs', 'provenance'].includes(doc.slug)) throw new Error(`${doc.source}: reserved page slug ${doc.slug}`);
   }
   const seriesByRoute = indexSeries(documents);
   const previewDocuments = documents.map(d => d.kind === 'post' && (d.draft || d.unlisted)
@@ -55,6 +55,9 @@ export function render(root, site, documents) {
     ...draftPosts
   ].sort((a, b) => (b.date || '').localeCompare(a.date || '') || a.slug.localeCompare(b.slug));
   const motifItems = allMotifPosts.map(toMotifItem);
+  const provenancePosts = posts
+    .filter(d => d.provenance)
+    .sort((a, b) => (b.date || '').localeCompare(a.date || '') || a.slug.localeCompare(b.slug));
   const pages = [
     { route: '/', title: site.title, description: site.description, template: 'index.html', posts: featuredPosts },
     { route: '/articles/', title: 'Articles', description: 'All published articles on software architecture, engineering, and systems.', eyebrow: 'Archive', template: 'index.html', posts },
@@ -64,6 +67,7 @@ export function render(root, site, documents) {
     { route: '/tags/', title: 'Tags', description: 'Browse articles by topic.', template: 'tags.html', tags },
     ...tags.map(tag => ({ route: `/tags/${tag.slug}/`, title: tag.name, description: `Articles tagged ${tag.name}.`, template: 'index.html', posts: tag.posts })),
     { route: '/motifs/', title: 'Article Motifs', description: 'Deterministic geometric identifiers generated for each article.', template: 'motifs.html', motifs: motifItems, algorithms: ALGORITHMS },
+    { route: '/provenance/', title: 'Cryptographic Provenance', description: 'Public verification ledger: OpenTimestamps proofs and Bitcoin blockchain attestations.', eyebrow: 'Public Ledger', template: 'provenance.html', ledger: provenancePosts },
     { route: '/404.html', title: 'Page not found', description: 'This page could not be found.', template: '404.html', noindex: true }
   ];
   const available = new Set(pages.filter(p => !p.preview).map(p => p.route));
@@ -73,7 +77,7 @@ export function render(root, site, documents) {
   });
   for (const page of pages) {
     const motifSvg = page.kind === 'post' ? generateArticleMotif(page) : null;
-    const context = { site, artwork, navigation, home: local('/'), articles: local('/articles/'), favicon: local('/favicon.svg'), stylesheet: local('/css/style.css'), diagramViewer: page.body?.includes('mermaid-diagram') ? local('/js/diagram-viewer.js') : null, feed: local('/feed.xml'), page: { motifSvg, motifs: page.motifs ?? [], draftMotifs: page.draftMotifs ?? [], algorithms: page.algorithms ?? ALGORITHMS, seriesNav: (page.preview ? previewSeriesByRoute : seriesByRoute).get(page.route) ?? null, previewIndex: local('/preview/'), preview: false, companion: null, date: null, updated: null, body: '', tags: [], noindex: false, ...page, canonical: absolute(page.route), tagLinks: (page.tags && page.kind ? page.tags : []).map(name => ({ name: tagLabel(name), url: local(`/tags/${tagSlug(name)}/`) })) } };
+    const context = { site, artwork, navigation, home: local('/'), articles: local('/articles/'), provenanceUrl: local('/provenance/'), favicon: local('/favicon.svg'), stylesheet: local('/css/style.css'), diagramViewer: page.body?.includes('mermaid-diagram') ? local('/js/diagram-viewer.js') : null, feed: local('/feed.xml'), page: { motifSvg, motifs: page.motifs ?? [], draftMotifs: page.draftMotifs ?? [], algorithms: page.algorithms ?? ALGORITHMS, ledger: page.ledger ?? [], seriesNav: (page.preview ? previewSeriesByRoute : seriesByRoute).get(page.route) ?? null, previewIndex: local('/preview/'), preview: false, companion: null, date: null, updated: null, body: '', tags: [], noindex: false, ...page, canonical: absolute(page.route), tagLinks: (page.tags && page.kind ? page.tags : []).map(name => ({ name: tagLabel(name), url: local(`/tags/${tagSlug(name)}/`) })) } };
     // Standalone page tags are accepted as metadata; only articles join tag archives.
     if (page.kind === 'page' || page.preview) context.page.tagLinks = [];
     if (page.posts) {

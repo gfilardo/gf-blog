@@ -154,12 +154,45 @@ test('blog engine attaches provenance metadata and renders provenance colophon',
 
   const html = files.get('posts/anchor-test/index.html');
   assert.ok(html);
-  // Header meta contains version and link to #provenance
-  assert.match(html, /<a href="#provenance" title="OpenTimestamps Bitcoin provenance">v1 anchored<\/a>/);
-  // Colophon contains block number and proof download link
-  assert.match(html, /#870142/);
-  assert.match(html, /2024-11-13/);
-  assert.match(html, /href="\/proofs\/anchor-test\/v1\.ots"/);
+  // Header meta contains version and link to /provenance/#anchor-test
+  assert.match(html, /<a href="\/provenance\/#anchor-test"[^>]*>v1 anchored<\/a>/);
+  // Head contains cryptographic metadata
+  assert.match(html, /<link rel="proof" type="application\/octet-stream" title="OpenTimestamps Proof" href="\/proofs\/anchor-test\/v1\.ots">/);
+  assert.match(html, /<meta name="bitcoin-block" content="870142">/);
+  // Dedicated provenance ledger page exists and lists the proof and block details
+  assert.ok(files.has('provenance/index.html'));
+  const ledgerHtml = files.get('provenance/index.html');
+  assert.match(ledgerHtml, /#870142/);
+  assert.match(ledgerHtml, /2024-11-13/);
+  assert.match(ledgerHtml, /href="\/proofs\/anchor-test\/v1\.ots"/);
+
+  // Add draft and unlisted posts with stamps
+  const draftFile = path.join(dir, 'content/posts/draft-post.md');
+  await writeFile(draftFile, `---\nid: draft-post\ntitle: Secret Draft\nauthor: "Giovanni Filardo"\nslug: draft-post\ndate: "2026-11-10"\ndescription: A secret draft\ndraft: true\n---\nDraft content.`);
+  await stampArticle(dir, 'draft-post', { mock: true, initialStatus: 'confirmed', bitcoinBlock: 870142 });
+
+  const unlistedFile = path.join(dir, 'content/posts/unlisted-post.md');
+  await writeFile(unlistedFile, `---\nid: unlisted-post\ntitle: Unlisted Essay\nauthor: "Giovanni Filardo"\nslug: unlisted-post\ndate: "2026-11-10"\ndescription: An unlisted essay\nunlisted: true\n---\nUnlisted content.`);
+  await stampArticle(dir, 'unlisted-post', { mock: true, initialStatus: 'confirmed', bitcoinBlock: 870142 });
+
+  const filesWithDrafts = await build(dir);
+  // Both draft and unlisted proofs exist
+  assert.ok(filesWithDrafts.has('proofs/draft-post/v1.ots'));
+  assert.ok(filesWithDrafts.has('proofs/unlisted-post/v1.ots'));
+
+  // Neither draft nor unlisted appears in the public /provenance/ ledger
+  const updatedLedgerHtml = filesWithDrafts.get('provenance/index.html');
+  assert.match(updatedLedgerHtml, /id="anchor-test"/);
+  assert.doesNotMatch(updatedLedgerHtml, /id="draft-post"/);
+  assert.doesNotMatch(updatedLedgerHtml, /Secret Draft/);
+  assert.doesNotMatch(updatedLedgerHtml, /id="unlisted-post"/);
+  assert.doesNotMatch(updatedLedgerHtml, /Unlisted Essay/);
+
+  // In draft preview page, the link downloads the .ots file directly rather than linking to /provenance/#id
+  const draftPreviewHtml = filesWithDrafts.get('preview/draft-post/index.html');
+  assert.ok(draftPreviewHtml);
+  assert.match(draftPreviewHtml, /<a href="\/proofs\/draft-post\/v1\.ots" download[^>]*>v1 anchored<\/a>/);
+  assert.doesNotMatch(draftPreviewHtml, /href="\/provenance\/#draft-post"/);
 
   // Modify file on disk without stamping -> drift notice
   await writeFile(postFile, `${postContent}\n\nUnanchored revision.`);
@@ -170,7 +203,6 @@ test('blog engine attaches provenance metadata and renders provenance colophon',
   const driftedFiles = await build(dir);
   const driftedHtml = driftedFiles.get('posts/anchor-test/index.html');
   assert.match(driftedHtml, /v1 draft modified/);
-  assert.match(driftedHtml, /Content has unanchored modifications since version 1/);
 });
 
 test('changing article file path preserves historical proof paths and updates currentPath', async t => {

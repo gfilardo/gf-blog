@@ -1,0 +1,77 @@
+{% extends "layout.html" %}
+{% block content %}
+<header class="page-heading">
+  <a class="back-link" href="{{ home }}">← Home</a>
+  <p class="eyebrow">Public Registry</p>
+  <h1>Cryptographic Provenance<span class="accent">.</span></h1>
+  <p class="intro">Every essay published here is anchored into the Bitcoin blockchain via OpenTimestamps. This public ledger records each article’s canonical SHA-256 digest, version history, Bitcoin block confirmation, and cryptographic proof receipt.</p>
+</header>
+
+<section class="provenance-ledger" aria-label="Cryptographic Provenance Ledger">
+  <div class="section-heading">
+    <h2>Anchored Articles</h2>
+    <span class="meta">{{ page.ledger.length }} {% if page.ledger.length == 1 %}entry{% else %}entries{% endif %}</span>
+  </div>
+
+  <div class="provenance-items">
+  {% for item in page.ledger %}
+    <article class="provenance-card" id="{{ item.id }}">
+      <div class="provenance-card-header">
+        <div class="provenance-meta-line">
+          <span class="provenance-version-badge">v{{ item.provenance.version }}</span>
+          {% if item.date %}<time class="meta" datetime="{{ item.date }}">{{ item.date }}</time>{% endif %}
+          {% if item.provenance.status == "confirmed" or item.provenance.status == "anchored" %}
+            <span class="provenance-status-tag status-anchored">Anchored</span>
+          {% else %}
+            <span class="provenance-status-tag status-pending">Pending next block</span>
+          {% endif %}
+          {% if not item.provenance.isCurrent %}
+            <span class="provenance-drift-tag">Draft modified locally</span>
+          {% endif %}
+        </div>
+        <h3 class="provenance-item-title"><a href="{{ item.url }}">{{ item.title }}</a></h3>
+      </div>
+
+      <dl class="provenance-details">
+        <div class="provenance-row">
+          <dt>Bitcoin Anchor</dt>
+          <dd>
+            {% if item.provenance.bitcoinBlock %}
+              <a href="https://mempool.space/block/{{ item.provenance.bitcoinBlock }}" target="_blank" rel="noopener" class="text-link">Block #{{ item.provenance.bitcoinBlock }} ↗</a>
+              {% if item.provenance.bitcoinBlockDate %} <span class="meta">({{ item.provenance.bitcoinBlockDate }})</span>{% endif %}
+            {% else %}
+              <span class="meta">Attested across calendar pools; pending confirmation in the next block.</span>
+            {% endif %}
+          </dd>
+        </div>
+
+        <div class="provenance-row">
+          <dt>SHA-256 Digest</dt>
+          <dd><code class="provenance-hash">{{ item.provenance.fileHash }}</code></dd>
+        </div>
+
+        <div class="provenance-row">
+          <dt>OpenTimestamps</dt>
+          <dd>
+            <a href="{{ item.provenance.proofUrl }}" class="provenance-download-btn" download>Download .ots proof (v{{ item.provenance.version }}) ↓</a>
+          </dd>
+        </div>
+      </dl>
+    </article>
+  {% endfor %}
+  </div>
+
+  <div class="provenance-verify-guide">
+    <h2>Independent Verification</h2>
+    <p>To verify any article offline against the Bitcoin blockchain without trusting this website or OpenTimestamps servers:</p>
+    <pre><code># 1. Download the article Markdown source and its .ots proof
+curl -sO {{ site.origin }}/proofs/&lt;article-id&gt;/v1.ots
+
+# 2. Verify with the OpenTimestamps CLI against a local Bitcoin node (bitcoind)
+npx --package=opentimestamps ots-cli.js verify v1.ots -f &lt;article-source&gt;.md</code></pre>
+    <p>You can also drag and drop both the Markdown source and the <code>.ots</code> proof into the open-source verifier at <a href="https://opentimestamps.org" target="_blank" rel="noopener">opentimestamps.org</a>.</p>
+  </div>
+
+  <div class="article-end"><span aria-hidden="true">■</span><a class="text-link" href="{{ home }}">Back to home ↗</a></div>
+</section>
+{% endblock %}

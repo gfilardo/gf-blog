@@ -289,15 +289,33 @@ main > .eyebrow:first-child { margin-top: 70px; }
 
 .provenance-meta a { text-decoration: none; color: var(--muted); font-family: var(--mono); font-size: 11px; }
 .provenance-meta a:hover { color: var(--accent); }
-.provenance-colophon { margin: 3.5em 0 2em; padding: 18px 22px; border: 1px solid var(--line); border-radius: 4px; background: var(--surface); font: 13px/1.6 var(--sans); }
-.provenance-inner { display: flex; flex-direction: column; gap: 8px; }
-.provenance-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-.provenance-badge { font: 11px/1.4 var(--mono); text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); font-weight: 600; }
-.provenance-version { font: 12px var(--mono); font-weight: 600; color: var(--ink); background: var(--paper); padding: 2px 7px; border-radius: 3px; border: 1px solid var(--line); }
-.provenance-desc { margin: 0; color: var(--muted); }
-.provenance-desc a { color: var(--accent); }
-.provenance-download { display: inline-block; font: 11px var(--mono); margin-left: 6px; }
-.provenance-drift { margin: 4px 0 0; color: var(--accent); font-size: 12px; font-weight: 500; }
+
+.provenance-ledger { margin-top: 2rem; }
+.provenance-items { display: flex; flex-direction: column; gap: 1.5rem; margin-top: 1.5rem; }
+.provenance-card { padding: 1.25rem 1.5rem; border: 1px solid var(--line); border-radius: 4px; background: var(--surface); transition: border-color 0.2s, background-color 0.2s; }
+.provenance-card:target { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 5%, var(--surface)); outline: none; }
+.provenance-card-header { margin-bottom: 1rem; }
+.provenance-meta-line { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 0.5rem; }
+.provenance-version-badge { font: 11px var(--mono); font-weight: 600; color: var(--ink); background: var(--paper); padding: 1px 6px; border-radius: 3px; border: 1px solid var(--line); }
+.provenance-status-tag { font: 11px var(--mono); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
+.provenance-status-tag.status-anchored { color: #2e7d32; }
+.provenance-status-tag.status-pending { color: var(--muted); }
+.provenance-drift-tag { font: 11px var(--mono); color: var(--accent); font-weight: 600; }
+.provenance-item-title { margin: 0; font-size: 1.15rem; line-height: 1.35; }
+.provenance-item-title a { text-decoration: none; color: var(--ink); }
+.provenance-item-title a:hover { color: var(--accent); }
+.provenance-details { display: grid; grid-template-columns: 160px 1fr; gap: 0.6rem 1rem; margin: 0; font-size: 13px; line-height: 1.5; }
+.provenance-row { display: contents; }
+.provenance-row dt { color: var(--muted); font-family: var(--mono); font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; align-self: baseline; }
+.provenance-row dd { margin: 0; word-break: break-all; }
+.provenance-hash { font: 11px/1.4 var(--mono); color: var(--ink); background: var(--paper); padding: 2px 5px; border-radius: 2px; }
+.provenance-download-btn { font: 12px var(--mono); color: var(--accent); text-decoration: none; display: inline-flex; align-items: center; gap: 4px; }
+.provenance-download-btn:hover { text-decoration: underline; }
+.provenance-verify-guide { margin-top: 3.5rem; padding-top: 2rem; border-top: 1px solid var(--line); }
+@media (max-width: 600px) {
+  .provenance-details { grid-template-columns: 1fr; gap: 0.25rem; }
+  .provenance-row dt { margin-top: 0.5rem; }
+}
 
 @media print {
   .diagram-expand, .diagram-viewer[open] { display: none; }
