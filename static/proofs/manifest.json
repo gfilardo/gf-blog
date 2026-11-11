@@ -49,6 +49,18 @@
           "gitCommit": "0d2100d2b8a2e80451d52c07c89e47289f687663",
           "bitcoinBlock": 975431,
           "bitcoinBlockTime": null
+        },
+        {
+          "version": 2,
+          "path": "content/posts/decentr-timestamps-implement-pipelines-and-verify.md",
+          "fileHash": "443bfd5db1e4c933460209009310159014f66093bcc640e2bf418744ddcf5283",
+          "proofFile": "static/proofs/decentralized-timestamps-pt2/v2.ots",
+          "otsUrl": "/proofs/decentralized-timestamps-pt2/v2.ots",
+          "stampedAt": "2026-11-11T15:15:17.706Z",
+          "status": "pending",
+          "gitCommit": "91c97baa619fa4987b879a2e14d0965a67b9d9e6",
+          "bitcoinBlock": null,
+          "bitcoinBlockTime": null
         }
       ]
     },
